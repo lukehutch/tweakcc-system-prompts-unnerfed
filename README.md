@@ -18,30 +18,31 @@ Currently aligned with **Claude Code v2.1.118**.
 
 You need [tweakcc](https://github.com/Piebald-AI/tweakcc) to patch these into your Claude Code binary. Upstream tweakcc hasn't been updated past v2.1.113, so use the [tweakcc-fixed](https://github.com/BenIsLegit/tweakcc-fixed) fork for now. See [Background](BACKGROUND.md#which-fork-to-use) for details.
 
-```bash
-# 1. Clone this repo
-git clone <this-repo-url> ~/src/tweakcc-system-prompts-github
+Grab the un-nerfed prompts as a release zip — no clone needed. From [Releases](https://github.com/BenIsLegit/tweakcc-system-prompts-unnerfed/releases), pick the tag whose Claude Code version matches yours (e.g. `v2.1.128-1` if you're on Claude Code v2.1.128) and download the `system-prompts-v<version>-<iteration>.zip` asset.
 
-# 2. Wipe any existing tweakcc prompts (tweakcc won't overwrite edited files,
+```bash
+# 1. Wipe any existing tweakcc prompts (tweakcc won't overwrite edited files,
 #    so a clean slate avoids conflicts)
 rm -rf ~/.tweakcc/system-prompts          # Unix
 # Remove-Item -Recurse -Force "$HOME\.tweakcc\system-prompts"  # Windows
 
-# 3. Extract fresh stock prompts from your Claude Code binary
+# 2. Extract fresh stock prompts from your Claude Code binary
 npx tweakcc-fixed@latest
 
-# 4. Copy the un-nerfed prompts over the stock ones
-cp ~/src/tweakcc-system-prompts-github/system-prompts/*.md ~/.tweakcc/system-prompts/
+# 3. Drop the un-nerfed prompts on top of the stock ones (overwriting stock).
+#    Replace <PATH-TO-DOWNLOADED-ZIP> with where you saved the release asset.
+unzip -o <PATH-TO-DOWNLOADED-ZIP> -d ~/.tweakcc/system-prompts/   # Unix
+# Expand-Archive -Force <PATH-TO-DOWNLOADED-ZIP> "$HOME\.tweakcc\system-prompts" # Windows
 
-# 5. Patch the binary
+# 4. Patch the binary
 npx tweakcc-fixed@latest --apply
 
-# 6. Restart any running Claude Code sessions
+# 5. Restart any running Claude Code sessions
 ```
 
 Leave the rest of `~/.tweakcc/` alone when you wipe `system-prompts/`. Files like `config.json`, `systemPromptOriginalHashes.json`, and `native-binary.backup` need to survive.
 
-You don't have to patch anything to get value from this repo. The files work as a prompt-engineering reference on their own. The diffs between stock and un-nerfed text are a case study in how brevity directives shape model behavior. And if you only want one or two changes, cherry-pick individual `.md` files. Each one is self-contained.
+You don't have to patch anything to get value from this repo. The files work as a prompt-engineering reference on their own — browse [`system-prompts/`](system-prompts) on GitHub, or unzip the release asset and read them locally. The diffs between stock and un-nerfed text are a case study in how brevity directives shape model behavior. And if you only want one or two changes, cherry-pick individual `.md` files. Each one is self-contained.
 
 ---
 
