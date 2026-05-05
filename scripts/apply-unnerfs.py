@@ -136,6 +136,21 @@ RULES: dict[str, list[Rule]] = {
     ],
 
     # -------------------------------------------------------------------------
+    # agent-prompt-background-job-agent-instructions.md — narration: thorough not
+    # one-line. The classifier-parsed signals (`result:`, `needs input:`,
+    # `failed:`) are bucket-1 functional caps and stay stock; only the
+    # narrate-between-chunks directive is brevity-nerfed and flipped here.
+    # (new in v2.1.128)
+    # -------------------------------------------------------------------------
+    "agent-prompt-background-job-agent-instructions.md": [
+        Rule(
+            stock="**Narrate.** One line on your approach before acting. After each chunk: what happened, what's next.",
+            unnerf="**Narrate.** Explain your approach before acting — cover what you plan to do, why, and any tradeoffs you weighed. After each chunk: what happened, what's next, and any non-obvious decisions, surprises, or observations worth surfacing. Substantive narration helps the user follow along and trust the work; one-liners hide the reasoning.",
+            description="background-job narrate: substantive over one-line",
+        ),
+    ],
+
+    # -------------------------------------------------------------------------
     # agent-prompt-batch-slash-command.md — recipe writing: thorough not short
     # -------------------------------------------------------------------------
     "agent-prompt-batch-slash-command.md": [
