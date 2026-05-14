@@ -40,7 +40,7 @@ It also normalizes any accidental CRLF line endings back to LF.
 
 Located at [`scripts/sync-version.mjs`](./scripts/sync-version.mjs). Node.js ES module, pinned to `gray-matter@4.0.3` — the exact dependency tweakcc itself uses. Takes a Claude Code version and rebuilds every `.md` in `system-prompts/` from the matching `prompts-X.Y.Z.json` that tweakcc publishes alongside its own releases.
 
-The output is **byte-identical** to what tweakcc's extractor would produce against a freshly installed Claude Code binary at that version — because the script calls the same `matter.stringify()` with the same options as tweakcc's [`generateMarkdownFromPrompt`](https://github.com/Piebald-AI/tweakcc/blob/main/src/systemPromptSync.ts). Verified by diffing 287/287 files against a fresh `~/.tweakcc/system-prompts/` extraction on v2.1.128.
+The output is **byte-identical** to what tweakcc's extractor would produce against a freshly installed Claude Code binary at that version — because the script calls the same `matter.stringify()` with the same options as tweakcc's [`generateMarkdownFromPrompt`](https://github.com/Piebald-AI/tweakcc/blob/main/src/systemPromptSync.ts). Verified by diffing 293/293 files against a fresh `~/.tweakcc/system-prompts/` extraction on v2.1.140.
 
 ### One-time setup
 
