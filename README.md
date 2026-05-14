@@ -17,7 +17,7 @@ Modified [Claude Code](https://docs.claude.com/en/docs/claude-code/overview) sys
 
 ## Install
 
-You need [tweakcc](https://github.com/Piebald-AI/tweakcc) to patch these into your Claude Code binary. Upstream tweakcc hasn't been updated past v2.1.113, so use the [tweakcc-fixed](https://github.com/BenIsLegit/tweakcc-fixed) fork for now. See [Background](BACKGROUND.md#which-fork-to-use) for details.
+You need [tweakcc](https://github.com/Piebald-AI/tweakcc) to patch these into your Claude Code binary.
 
 Grab the un-nerfed prompts as a release zip — no clone needed. From [Releases](https://github.com/BenIsLegit/tweakcc-system-prompts-unnerfed/releases), pick the tag whose Claude Code version matches yours (e.g. `v2.1.140-1` if you're on Claude Code v2.1.140) and download the `system-prompts-v<version>-<iteration>.zip` asset.
 
@@ -28,7 +28,7 @@ rm -rf ~/.tweakcc/system-prompts          # Unix
 # Remove-Item -Recurse -Force "$HOME\.tweakcc\system-prompts"  # Windows
 
 # 2. Extract fresh stock prompts from your Claude Code binary
-npx tweakcc-fixed@latest
+npx tweakcc@latest
 
 # 3. Drop the un-nerfed prompts on top of the stock ones (overwriting stock).
 #    Replace <PATH-TO-DOWNLOADED-ZIP> with where you saved the release asset.
@@ -36,7 +36,7 @@ unzip -o <PATH-TO-DOWNLOADED-ZIP> -d ~/.tweakcc/system-prompts/   # Unix
 # Expand-Archive -Force <PATH-TO-DOWNLOADED-ZIP> "$HOME\.tweakcc\system-prompts" # Windows
 
 # 4. Patch the binary
-npx tweakcc-fixed@latest --apply
+npx tweakcc@latest --apply
 
 # 5. Restart any running Claude Code sessions
 ```
