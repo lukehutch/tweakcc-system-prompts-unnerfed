@@ -1,0 +1,13 @@
+{
+  "name": "system-prompts-github-scripts",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Helper scripts for the un-nerfed system-prompts repo. Pinned to gray-matter@4.0.3 — the same version tweakcc uses — so generated .md files are byte-identical to what tweakcc itself produces.",
+  "scripts": {
+    "sync": "node sync-version.mjs"
+  },
+  "dependencies": {
+    "gray-matter": "4.0.3"
+  }
+}
