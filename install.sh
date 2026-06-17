@@ -30,15 +30,20 @@
 # ENV OVERRIDES
 #   UNNERF_REPO   git URL of the un-nerf repo   (default: upstream project)
 #   UNNERF_REF    branch/tag/commit to fetch    (default: master)
-#   TWEAKCC_PKG   npm package for tweakcc        (default: tweakcc@latest;
-#                 set to tweakcc-fixed@latest if upstream lags your CC version)
+#   TWEAKCC_GIT   git URL of tweakcc to BUILD   (default: the fork carrying the
+#                 v2.1.179 Latin-1 \xHH locator fix). We build tweakcc from git,
+#                 not the npm release, because the released tweakcc can't fully
+#                 patch recent Claude Code builds (see README/BACKGROUND).
+#   TWEAKCC_REF   branch/tag/commit of tweakcc  (default: the fix branch)
 #   CC_BIN        path to the Claude Code native binary (default: auto-detect)
 #
 set -Eeuo pipefail
 
 UNNERF_REPO="${UNNERF_REPO:-https://github.com/BenIsLegit/tweakcc-system-prompts-unnerfed.git}"
 UNNERF_REF="${UNNERF_REF:-master}"
-TWEAKCC_PKG="${TWEAKCC_PKG:-tweakcc@latest}"
+TWEAKCC_GIT="${TWEAKCC_GIT:-https://github.com/lukehutch/tweakcc.git}"
+TWEAKCC_REF="${TWEAKCC_REF:-fix-latin1-xhh-locator-2.1.179}"
+TWEAKCC=""   # set to "node <dist>/index.mjs" by build_tweakcc
 TWEAKCC_DIR="${HOME}/.tweakcc"
 PROMPTS_DIR="${TWEAKCC_DIR}/system-prompts"
 
@@ -61,6 +66,29 @@ trap cleanup EXIT
 trap 'die "failed at line $LINENO (exit $?)"' ERR
 
 usage() { sed -n '2,40p' "$0" | sed 's/^# \{0,1\}//'; exit 0; }
+
+# Build tweakcc from git and set $TWEAKCC to a runnable command. We build from
+# source (not `npx tweakcc@latest`) because the released tweakcc lags recent
+# Claude Code builds: on v2.1.179 it can't fully patch system prompts (a failed
+# UI patch aborts the repack, and its locator misses Latin-1 \xHH escapes). The
+# default fork carries those fixes.
+build_tweakcc() {
+  log "Building tweakcc from git (${TWEAKCC_GIT} @ ${TWEAKCC_REF})"
+  local dir="${WORKDIR}/tweakcc"
+  git clone --quiet --depth 1 --branch "$TWEAKCC_REF" "$TWEAKCC_GIT" "$dir" 2>/dev/null \
+    || git clone --quiet --depth 1 "$TWEAKCC_GIT" "$dir" \
+    || die "could not clone tweakcc from $TWEAKCC_GIT @ $TWEAKCC_REF"
+  if ! command -v pnpm >/dev/null 2>&1; then
+    corepack enable pnpm >/dev/null 2>&1 || npm i -g pnpm >/dev/null 2>&1 \
+      || die "tweakcc builds with pnpm; install pnpm (npm i -g pnpm) and retry"
+  fi
+  ( cd "$dir" && pnpm install --silent --prefer-offline >/dev/null 2>&1 \
+      && pnpm build:dev >/dev/null 2>&1 ) \
+    || die "tweakcc build failed under $dir — run 'pnpm install && pnpm build:dev' there to see why"
+  [ -f "${dir}/dist/index.mjs" ] || die "tweakcc build produced no dist/index.mjs"
+  TWEAKCC="node ${dir}/dist/index.mjs"
+  info "tweakcc built: $($TWEAKCC --version 2>/dev/null | head -1)"
+}
 
 # ---------------------------------------------------------------------------
 # Args
@@ -155,8 +183,10 @@ done
 info "${changed} prompts un-nerfed"
 
 # ---------------------------------------------------------------------------
-# 5. Seed ~/.tweakcc and stage the un-nerfed prompts
+# 5. Build tweakcc from git, then seed ~/.tweakcc and stage the un-nerfed prompts
 # ---------------------------------------------------------------------------
+build_tweakcc
+
 log "Seeding ~/.tweakcc from your binary"
 # tweakcc's --apply needs an extraction baseline (original hashes + prompt-data
 # cache) that maps each .md back to its string in the binary. That extraction
@@ -189,7 +219,7 @@ if [ "$need_extract" = 1 ]; then
   done
   info "moved stale extraction state -> ${stale}"
   printf '%sPress Enter to launch tweakcc for extraction (Ctrl-C to abort)...%s' "$B" "$N"; read -r _
-  npx --yes "$TWEAKCC_PKG" || true
+  $TWEAKCC || true
   [ -f "${TWEAKCC_DIR}/systemPromptOriginalHashes.json" ] \
     || die "extraction did not complete (no systemPromptOriginalHashes.json). Re-run after extracting in tweakcc."
 fi
@@ -237,7 +267,8 @@ info "${G}verified:${N} ${overlaid}/${changed} prompts overwritten with un-nerfe
 
 if [ "$PROMPTS_ONLY" = 1 ]; then
   log "Prompts-only mode: ${PROMPTS_DIR} updated (${changed} un-nerfed)."
-  info "Apply them with:  npx ${TWEAKCC_PKG} --apply   (then verify the change took effect)"
+  info "Apply them by running this script without --prompts-only, or build tweakcc"
+  info "from git (${TWEAKCC_GIT} @ ${TWEAKCC_REF}) and run its '--apply', then verify."
   exit 0
 fi
 
@@ -253,9 +284,9 @@ log "Patching the Claude Code binary"
 # whole repack. There is no clean per-prompt apply that skips it, so the result
 # depends entirely on your tweakcc version matching your CC version — and the
 # verify step below, not tweakcc's exit code, is the source of truth.
-if ! npx --yes "$TWEAKCC_PKG" --apply 2>"${WORKDIR}/apply.err"; then
+if ! $TWEAKCC --apply 2>"${WORKDIR}/apply.err"; then
   sed 's/^/      /' "${WORKDIR}/apply.err" >&2 2>/dev/null || true
-  die "tweakcc --apply aborted on CC v${CC_VERSION}. This means your tweakcc version's binary patches lag this CC release (typically a failed 'patches-applied-indication' refuses the repack). Try TWEAKCC_PKG=tweakcc-fixed@latest, or wait for a tweakcc that supports v${CC_VERSION}. Your binary is unchanged."
+  die "tweakcc --apply aborted on CC v${CC_VERSION}. The git tweakcc we built (${TWEAKCC_REF}) may still lag this CC release. Check the error above; you may need a newer tweakcc branch (set TWEAKCC_REF). Your binary is unchanged."
 fi
 
 # Check (4): confirm the un-nerf actually reached the binary. tweakcc can report
@@ -263,7 +294,7 @@ fi
 # locator lags the CC version, so verify by unpacking and counting sentinels.
 log "Verifying the un-nerf actually landed in the binary"
 VERIFY_JS="${WORKDIR}/patched.js"
-if npx --yes "$TWEAKCC_PKG" unpack "$VERIFY_JS" "$CC_BIN" >/dev/null 2>&1; then
+if $TWEAKCC unpack "$VERIFY_JS" "$CC_BIN" >/dev/null 2>&1; then
   hits=0
   for s in "senior-engineer standard" "never trade away rigor, depth, or correctness" \
            "Spawn agents whenever parallel investigation" "investigate thoroughly, then be direct" \
@@ -273,12 +304,12 @@ if npx --yes "$TWEAKCC_PKG" unpack "$VERIFY_JS" "$CC_BIN" >/dev/null 2>&1; then
   if [ "$hits" -ge 4 ]; then
     info "${G}verified:${N} un-nerf is present in the patched binary (${hits}/5 sentinels)"
     log "${G}Done.${N} Restart any running Claude Code sessions to pick up the un-nerfed prompts."
-    info "Roll back any time with:  npx ${TWEAKCC_PKG} --restore"
+    info "Roll back any time with:  npx tweakcc@latest --restore"
   elif [ "$hits" -ge 1 ]; then
-    die "PARTIAL apply (${hits}/5 sentinels). Your tweakcc version can only partially patch system prompts into CC v${CC_VERSION} (a known gap on very recent CC). Restore a clean binary: npx ${TWEAKCC_PKG} --restore"
+    die "PARTIAL apply (${hits}/5 sentinels). Your tweakcc version can only partially patch system prompts into CC v${CC_VERSION} (a known gap on very recent CC). Restore a clean binary: npx tweakcc@latest --restore"
   else
-    die "apply did NOT land (0/5 sentinels) even though tweakcc reported success — its system-prompt patcher does not support CC v${CC_VERSION} yet, so nothing was changed. Restore a clean binary with: npx ${TWEAKCC_PKG} --restore"
+    die "apply did NOT land (0/5 sentinels) even though tweakcc reported success — its system-prompt patcher does not support CC v${CC_VERSION} yet, so nothing was changed. Restore a clean binary with: npx tweakcc@latest --restore"
   fi
 else
-  warn "patched binary could not be unpacked to verify — check behavior in a session, or restore with: npx ${TWEAKCC_PKG} --restore"
+  warn "patched binary could not be unpacked to verify — check behavior in a session, or restore with: npx tweakcc@latest --restore"
 fi

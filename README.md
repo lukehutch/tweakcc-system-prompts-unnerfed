@@ -30,8 +30,8 @@ You need [tweakcc](https://github.com/Piebald-AI/tweakcc) to patch these into yo
 
 It does a bare `tweakcc --apply` (the only invocation that actually applies system-prompt `.md` edits) and then **verifies the un-nerf reached the binary** — failing loudly and leaving your binary clean if it didn't. One interactive step remains — tweakcc's extractor is a TUI that can't be driven headlessly — and the script walks you through it.
 
-> [!WARNING]
-> **Binary patching depends on your tweakcc supporting your exact CC version.** As of the v2.1.179 sync, no released tweakcc cleanly patches system prompts into a **v2.1.179** binary: upstream `tweakcc` (4.0.14) aborts when its `patches-applied-indication` UI patch fails to match the newer build, and even past that its system-prompt locator matches only a fraction of v2.1.179's prompts; `tweakcc-fixed` targets ≤ v2.1.142. The prompts in this repo are correct and verified for v2.1.179 and apply cleanly on tweakcc-supported CC versions — v2.1.179 binary patching awaits a tweakcc update. Until then, the `.md` set is still a complete, accurate prompt-engineering reference. `install.sh` detects this and stops cleanly rather than leaving you with a half-patched binary.
+> [!NOTE]
+> **v2.1.179 binary patching works — via tweakcc built from git, not the npm release.** The *released* `tweakcc` (4.0.14) can't fully patch a v2.1.179 binary: a failed UI patch (`patches-applied-indication`) aborts the repack, and its prompt locator misses Latin-1 characters that recent Bun builds store as `\xHH` (e.g. `·` → `\xB7`), so ~10 prompts fail to apply. tweakcc `main` already fixes the UI abort; the locator bug is a one-line fix in [`lukehutch/tweakcc@fix-latin1-xhh-locator-2.1.179`](https://github.com/lukehutch/tweakcc/tree/fix-latin1-xhh-locator-2.1.179) (tested, PR-ready). `install.sh` therefore **builds tweakcc from that git source** and applies all 79 binary-applicable un-nerfs with **0 failures** — verified on a real v2.1.179 install. Once the locator fix lands upstream, set `TWEAKCC_GIT`/`TWEAKCC_REF` to upstream `main`.
 
 ### Manual install
 
