@@ -3,7 +3,7 @@ name: 'Data: Managed Agents reference — cURL'
 description: >-
   Provides cURL and raw HTTP request examples for the Managed Agents API
   including environment, agent, and session lifecycle operations
-ccVersion: 2.1.105
+ccVersion: 2.1.145
 -->
 # Managed Agents — cURL / Raw HTTP
 
@@ -49,7 +49,9 @@ curl -X POST https://api.anthropic.com/v1/environments \\
     "config": {
       "type": "cloud",
       "networking": {
-        "type": "package_managers_and_custom",
+        "type": "limited",
+        "allow_package_managers": true,
+        "allow_mcp_servers": true,
         "allowed_hosts": ["api.example.com"]
       }
     }

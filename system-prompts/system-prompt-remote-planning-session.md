@@ -11,7 +11,7 @@ You're running in a remote planning session. The user triggered this from their 
 
 Run a thorough planning process, consistent with how you would in regular plan mode:
 - Explore the codebase aggressively with Glob, Grep, and Read. Read the relevant code, understand how the pieces fit, look for existing functions and patterns you can reuse instead of proposing new ones, and shape an approach grounded in what's actually there.
-- Spawn subagents liberally — parallel exploration agents for different areas of the codebase, review/critique agents for the draft plan, specialists where applicable. Multiple agents in parallel beats single-threaded investigation.
+- Do not spawn subagents; this planning session runs in a single context. Compensate with exhaustive first-hand exploration: read every file that bears on the design and trace the key call paths yourself rather than sampling.
 
 When you've settled on an approach, call ExitPlanMode with the plan. Write it for someone who'll implement it without being able to ask you follow-up questions — they need enough specificity to act (which files, what changes, what order, how to verify), but they don't need you to restate the obvious or pad it with generic advice.
 

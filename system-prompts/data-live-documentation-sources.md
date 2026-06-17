@@ -3,7 +3,7 @@ name: 'Data: Live documentation sources'
 description: >-
   WebFetch URLs for fetching current Claude API and Agent SDK documentation from
   official sources
-ccVersion: 2.1.142
+ccVersion: 2.1.172
 -->
 # Live Documentation Sources
 
@@ -24,6 +24,7 @@ This file contains WebFetch URLs for fetching current information from platform.
 | --------------- | ---------------------------------------------------------------------------- | ------------------------------------------------------------------------------- |
 | Models Overview | \`https://platform.claude.com/docs/en/about-claude/models/overview.md\`        | "Extract current model IDs, context windows, and pricing for all Claude models" |
 | Migration Guide | \`https://platform.claude.com/docs/en/about-claude/models/migration-guide.md\` | "Extract breaking changes, deprecated parameters, and per-model migration steps when moving to a newer Claude model" |
+| Introducing Claude Fable 5 | \`https://platform.claude.com/docs/en/about-claude/models/introducing-claude-fable-5.md\` | "Extract capabilities, API changes, and availability stages for Claude Fable 5 and Claude Mythos 5" |
 | Pricing         | \`https://platform.claude.com/docs/en/pricing.md\`                             | "Extract current pricing per million tokens for input and output"               |
 
 ### Core Features
@@ -92,6 +93,8 @@ Use these when a managed-agents binding, behavior, or wire-level detail isn't co
 | Define Outcomes       | \`https://platform.claude.com/docs/en/managed-agents/define-outcomes.md\`          | "Extract outcome definitions, evaluation hooks, and success criteria configuration"             |
 | Sessions              | \`https://platform.claude.com/docs/en/managed-agents/sessions.md\`                 | "Extract session lifecycle, status transitions, idle/terminated semantics, and resume rules"    |
 | Environments          | \`https://platform.claude.com/docs/en/managed-agents/environments.md\`             | "Extract environment config (cloud/networking), management endpoints, and reuse model"          |
+| Self-Hosted Sandboxes | \`https://platform.claude.com/docs/en/managed-agents/self-hosted-sandboxes.md\`    | "Extract config:{type:self_hosted}, ANTHROPIC_ENVIRONMENT_KEY, EnvironmentWorker.run/run_one, beta_agent_toolset, ant beta:worker poll/run, webhook-driven wake" |
+| Self-Hosted Sandboxes — Security | \`https://platform.claude.com/docs/en/managed-agents/self-hosted-sandboxes-security.md\` | "Extract what the customer owns (hardening, egress, key custody, trust boundaries) vs what Anthropic cannot do" |
 | Events and Streaming  | \`https://platform.claude.com/docs/en/managed-agents/events-and-streaming.md\`     | "Extract event stream types, stream-first ordering, reconnect/dedupe, and steering patterns"    |
 | Tools                 | \`https://platform.claude.com/docs/en/managed-agents/tools.md\`                    | "Extract built-in toolset, custom tool definitions, and tool result wire format"                |
 | Files                 | \`https://platform.claude.com/docs/en/managed-agents/files.md\`                    | "Extract file upload, mount paths, session resources, and listing/downloading session outputs"  |
@@ -115,6 +118,8 @@ The \`ant\` CLI provides terminal access to the Claude API. Every API resource i
 | Topic         | URL                                                     | Extraction Prompt                                                                                  |
 | ------------- | ------------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
 | Anthropic CLI | \`https://platform.claude.com/docs/en/api/sdks/cli.md\`   | "Extract CLI install, authentication, command structure, and the beta:agents/environments/sessions commands" |
+| Authentication overview | \`https://platform.claude.com/docs/en/manage-claude/authentication.md\` | "Extract the credential options (API keys, interactive OAuth login, Workload Identity Federation) and when to use each" |
+| WIF reference | \`https://platform.claude.com/docs/en/manage-claude/wif-reference.md\`  | "Extract credential precedence order, the profile configuration file schema, and the configuration directory layout" |
 
 ---
 
@@ -131,6 +136,8 @@ WebFetch these when a binding (class, method, namespace, field) isn't covered in
 | Ruby       | \`https://github.com/anthropics/anthropic-sdk-ruby\`       | "Extract beta managed-agents methods and parameter shapes (\`client.beta.agents\`, \`client.beta.sessions\`)"               |
 | C#         | \`https://github.com/anthropics/anthropic-sdk-csharp\`     | "Extract beta managed-agents classes and method signatures (NuGet package, \`BetaManagedAgents*\` types)"                 |
 | PHP        | \`https://github.com/anthropics/anthropic-sdk-php\`        | "Extract beta managed-agents classes and method signatures (\`$client->beta->agents\`, \`BetaManagedAgents*\` params)"      |
+
+Each SDK repo also ships runnable programs under \`examples/\` — including the refusal-fallback / \`fallbacks\` examples (client-side middleware registration, fallback state, server-side \`fallbacks\` param). Fetch those for exact per-language syntax instead of translating another language's example.
 
 ---
 

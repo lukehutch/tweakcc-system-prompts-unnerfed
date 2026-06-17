@@ -1,7 +1,7 @@
 <!--
 name: 'Skill: Verify skill'
 description: Skill for opinionated verification workflow for validating code changes.
-ccVersion: 2.1.97
+ccVersion: 2.1.166
 -->
 ---
 name: verify
@@ -12,8 +12,8 @@ description: Verify that a code change actually does what it's supposed to by ru
 drive it to where the changed code executes, and capture what you
 see. That capture is your evidence. Nothing else is.
 
-**Don't run tests. Don't typecheck.** CI ran both before you got
-here. Running them again proves you can run CI. Not as a warm-up,
+**Don't run tests. Don't typecheck.** Running them here proves you
+can run CI — not that the change works. Not as a warm-up,
 not "just to be sure," not as a regression sweep after. The time
 goes to running the app instead.
 
@@ -25,18 +25,24 @@ a window. Go there.
 
 ## Find the change
 
-Establish the full range first — a branch may be many commits:
+The scope is what you're verifying — usually a diff, sometimes just
+"does X work." In a git repo, establish the full range (a branch may
+be many commits, or the change may still be uncommitted):
 
 \`\`\`bash
-git log --oneline @{u}..              # count commits
+git log --oneline @{u}..              # count commits (if upstream set)
 git diff @{u}.. --stat                # full range, not HEAD~1
+git diff origin/HEAD... --stat        # no upstream: committed vs base
+git diff HEAD --stat                  # uncommitted: working tree vs HEAD
 gh pr diff                            # if in a PR context
 \`\`\`
 
-State the commit count in your report. Large diff truncating? Redirect:
-\`git diff @{u}.. > /tmp/d\` then Read it. No diff at all → say so, stop.
+State the commit count. Large diff truncating? Redirect to a file
+then Read it. Repo but no diff from any of these → say so, stop.
+**No repo → the scope is whatever the user named; ask if they
+didn't.**
 
-**The diff is ground truth. The PR description is a claim about it.**
+**The diff is ground truth. Any description is a claim about it.**
 Read both. If they disagree, that's a finding.
 
 ## Surface
@@ -73,9 +79,9 @@ the app. Checking that assertions match source is code review.
 
 **Check \`.claude/skills/\` first — even if you already know how to
 build and run.** A matching \`verifier-*\` skill is the repo's
-evidence-capture protocol: it wraps the session in whatever
-recording/screenshot mechanism the review pipeline consumes. Drive
-the surface without it and you get a verdict with no replay.
+evidence-capture protocol: it wraps the session so a reviewer can
+replay what you saw (recording, screenshots). Drive the surface
+without it and you get a verdict with no replay.
 
 \`\`\`bash
 ls .claude/skills/
@@ -88,10 +94,9 @@ ls .claude/skills/
   user whether to patch it; don't FAIL the change for verifier rot.
 - **\`run-*\` but no matching verifier** → use its build/launch
   primitives as your handle.
-- **Neither** → cold start from README/package.json/Makefile. Timebox
-  ~15min. Stuck → BLOCKED with exactly where, plus a filled-in
-  \`/run-skill-generator\` prompt. Got through → mention
-  \`/init-verifiers\` in your report so next time is faster.
+- **Neither** → cold start from README/package.json/Makefile. Push hard to get a handle — install the missing deps, patch the gates, read the stack trace and try again. Fall back to BLOCKED only once you've genuinely exhausted the obvious launch paths, with exactly where, plus a filled-in
+  \`/run-skill-generator\` prompt. Got through → note the working
+  build/launch recipe so it can become a \`verifier-*\` skill.
 
 ## Drive it
 
@@ -119,13 +124,18 @@ isolation doesn't mean the flow works — seams are where bugs hide.
 If users click buttons, test by clicking buttons, not by curling the
 API underneath.
 
+**Destructive path?** If the change touches code that deletes,
+publishes, sends, or writes outside the workspace and there's no
+dry-run or safe target, don't drive it live. Verify what you can
+around it and say which path you didn't exercise and why.
+
 ## Push on it
 
 The claim checked out — that's the first half. Confirming is step
-one, not the job. The PR description is what the author intended;
+one, not the job. The description is what the author intended;
 your value is what they didn't.
 
-The diff told you exactly what's new. Probe *around* it, at the same
+You know exactly what changed. Probe *around* it, at the same
 surface you just drove:
 
 - **New flag / option** → empty value, passed twice, combined with a
@@ -141,7 +151,7 @@ surface you just drove:
 - **Wander** → what's adjacent? What looked off while you were
   confirming? Go back to it.
 
-These aren't a checklist — pick the ones the diff points at. Stop
+These aren't a checklist — pick the ones the change points at. Stop
 when you've covered the obvious adjacents or hit something worth a
 ⚠️. A probe that finds nothing is still a step: "🔍 passed \`--from ''\`
 → clean \`error: --from requires a value\`, exit 2." That the author
@@ -183,14 +193,14 @@ typecheck don't belong here — they're CI's output.
 
 1. ✅/❌/⚠️/🔍 <what you did to the running app> → <what you observed>
    <evidence: the app's own output — pane capture, response body,
-   screenshot path>
+   screenshot>
 
 🔍 marks a probe — a step off the claim's happy path, trying to
 break it. At least one. A Steps list that's all ✅ and no 🔍 is a
 happy-path replay: still PASS, but you stopped at the first half.
 
 **Screenshot / sample:** <the one frame a reviewer looks at to see
-the feature — image path for GUI/TUI, code block for library/API;
+the feature — an image for GUI/TUI, code block for library/API;
 omit for build/types-only>
 
 ### Findings
@@ -208,11 +218,19 @@ Each probe gets a line here even when it held — "🔍 empty \`--from\`
 → clean error" tells the author what *was* covered, which they
 can't see from a bare PASS.
 
-Lead with ⚠️ for lines worth interrupting the reviewer for — those get
-hoisted above the PR comment fold. Plain bullets are context they'll
-find if they expand. Empty is fine if nothing stuck out — but nothing
+Lead with ⚠️ for lines worth interrupting the reviewer for; plain
+bullets are context. Empty is fine if nothing stuck out — but nothing
 sticking out is itself rare.>
 \`\`\`
+
+**Evidence has to reach the reader.** A file path is only evidence
+if the person reading the report can open it. If the \`SendUserFile\`
+tool is in your toolset, you're on a remote surface where they
+can't — send the screenshots and recordings with it and let the
+report name what you sent. Without it, reference the path and keep
+the evidence that matters inline — pane captures and response
+bodies travel in the report; a bare path only works when the reader
+shares your filesystem.
 
 **Verdicts:**
 - **PASS** — you ran the app, the change did what it should at its

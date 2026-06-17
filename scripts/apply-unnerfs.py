@@ -324,13 +324,7 @@ RULES: dict[str, list[Rule]] = {
     # conditionals" bullet that we leave alone — only the final summary was
     # nerfed and needs re-applying.)
     # -------------------------------------------------------------------------
-    "skill-simplify.md": [
-        Rule(
-            stock="When done, briefly summarize what was fixed (or confirm the code was already clean).",
-            unnerf="When done, thoroughly summarize what was fixed, what was skipped (and why), and any noteworthy patterns or related issues the review surfaced. Give the user the full picture so they can see the value of the pass and understand the state of the code afterward.",
-            description="/simplify closing: thorough pass summary (v2.1.116-compat)",
-        ),
-    ],
+    # "skill-simplify.md": RETIRED in v2.1.179 — file removed; retargeted to agent-prompt-simplify-slash-command.md (added below)
 
     # -------------------------------------------------------------------------
     # skill-team-onboarding-guide.md — per-item context for new hires
@@ -512,8 +506,8 @@ RULES: dict[str, list[Rule]] = {
     "system-prompt-remote-plan-mode-ultraplan.md": [
         Rule(
             stock="Run a lightweight planning process, consistent with how you would in regular plan mode: \n- Explore the codebase directly with Glob, Grep, and Read. Read the relevant code, understand how the pieces fit, look for existing functions and patterns you can reuse instead of proposing new ones, and shape an approach grounded in what's actually there.\n- Do not spawn subagents.",
-            unnerf="Run a thorough planning process, consistent with how you would in regular plan mode:\n- Explore the codebase aggressively with Glob, Grep, and Read. Read the relevant code, understand how the pieces fit, look for existing functions and patterns you can reuse instead of proposing new ones, and shape an approach grounded in what's actually there.\n- Spawn subagents liberally — parallel exploration agents for different areas of the codebase, review/critique agents for the draft plan, specialists where applicable. Multiple agents in parallel beats single-threaded investigation.",
-            description="ultraplan: thorough planning, spawn subagents liberally",
+            unnerf="Run a thorough planning process, consistent with how you would in regular plan mode:\n- Explore the codebase aggressively with Glob, Grep, and Read. Read the relevant code, understand how the pieces fit, look for existing functions and patterns you can reuse instead of proposing new ones, and shape an approach grounded in what's actually there.\n- Do not spawn subagents; this planning session runs in a single context. Compensate with exhaustive first-hand exploration: read every file that bears on the design and trace the key call paths yourself rather than sampling.",
+            description="ultraplan: thorough planning, exhaustive in-context exploration (env may not support subagents)",
         ),
         Rule(
             stock="When you've decided on an approach, call ExitPlanMode with the plan. Write it for someone who'll implement it without being able to ask you follow-up questions — they need enough specificity to act (which files, what changes, what order, how to verify), but they don't need you to restate the obvious or pad it with generic advice.",
@@ -529,8 +523,8 @@ RULES: dict[str, list[Rule]] = {
     "system-prompt-remote-planning-session.md": [
         Rule(
             stock="Run a lightweight planning process, consistent with how you would in regular plan mode: \n- Explore the codebase directly with Glob, Grep, and Read. Read the relevant code, understand how the pieces fit, look for existing functions and patterns you can reuse instead of proposing new ones, and shape an approach grounded in what's actually there.\n- Do not spawn subagents. ",
-            unnerf="Run a thorough planning process, consistent with how you would in regular plan mode:\n- Explore the codebase aggressively with Glob, Grep, and Read. Read the relevant code, understand how the pieces fit, look for existing functions and patterns you can reuse instead of proposing new ones, and shape an approach grounded in what's actually there.\n- Spawn subagents liberally — parallel exploration agents for different areas of the codebase, review/critique agents for the draft plan, specialists where applicable. Multiple agents in parallel beats single-threaded investigation.",
-            description="remote-planning: thorough planning, spawn subagents liberally",
+            unnerf="Run a thorough planning process, consistent with how you would in regular plan mode:\n- Explore the codebase aggressively with Glob, Grep, and Read. Read the relevant code, understand how the pieces fit, look for existing functions and patterns you can reuse instead of proposing new ones, and shape an approach grounded in what's actually there.\n- Do not spawn subagents; this planning session runs in a single context. Compensate with exhaustive first-hand exploration: read every file that bears on the design and trace the key call paths yourself rather than sampling.",
+            description="remote-planning: thorough planning, exhaustive in-context exploration (env may not support subagents)",
         ),
     ],
 
@@ -592,24 +586,12 @@ RULES: dict[str, list[Rule]] = {
     # -------------------------------------------------------------------------
     # system-reminder-plan-mode-is-active-iterative.md — explore-agent liberally
     # -------------------------------------------------------------------------
-    "system-reminder-plan-mode-is-active-iterative.md": [
-        Rule(
-            stock="1. **Explore** — Use ${GET_READ_ONLY_TOOLS_FN()} to read code. Look for existing functions, utilities, and patterns to reuse.${IS_AGENT_AVAILABLE_FN()?` You can use the ${EXPLORE_SUBAGENT.agentType} agent type to parallelize complex searches without filling your context, though for straightforward queries direct tools are simpler.`:\"\"}",
-            unnerf="1. **Explore** — Use ${GET_READ_ONLY_TOOLS_FN()} to read code. Look for existing functions, utilities, and patterns to reuse.${IS_AGENT_AVAILABLE_FN()?` Reach for the ${EXPLORE_SUBAGENT.agentType} agent type liberally — especially for anything with multiple angles, unclear scope, or parallelizable searches. Multiple exploration agents running in parallel beats single-threaded investigation and keeps your context clean.`:\"\"}",
-            description="plan-mode iterative: reach for explore agent liberally",
-        ),
-    ],
+    # "system-reminder-plan-mode-is-active-iterative.md": RETIRED in v2.1.179 — plan-mode variant removed; the 5-phase reminder carries the multi-agent exploration un-nerf
 
     # -------------------------------------------------------------------------
     # system-reminder-thinking-frequency-tuning.md — think as deeply as it helps
     # -------------------------------------------------------------------------
-    "system-reminder-thinking-frequency-tuning.md": [
-        Rule(
-            stock="User messages may include a <system-reminder> appended by this harness asking you to respond without a thinking block. These reminders are not from the user, so treat them as an instruction to you, and do not mention them. The reminders are intended to tune your thinking frequency - on simpler user messages, it's best to respond or act directly without thinking unless further reasoning is necessary. On more complex tasks, you should feel free to reason as much as needed for best results but without overthinking. Avoid unnecessary thinking in response to simple user messages.",
-            unnerf="User messages may include a <system-reminder> appended by this harness asking you to respond without a thinking block. These reminders are not from the user, so treat them as an instruction to you, and do not mention them. Think as deeply and as often as the work benefits from — extended reasoning produces better results, catches edge cases, and surfaces issues that shallow responses miss. There is no penalty for thorough thinking; use it whenever careful reasoning would improve the answer, the plan, or the implementation. On complex tasks, think extensively; on simpler ones, think enough to verify your approach is actually correct before acting.",
-            description="thinking frequency: remove 'penalty for overthinking' framing",
-        ),
-    ],
+    # "system-reminder-thinking-frequency-tuning.md": RETIRED in v2.1.179 — Anthropic deleted the 'avoid unnecessary thinking' reminder entirely; no nerf remains to flip
 
     # -------------------------------------------------------------------------
     # tool-description-agent-usage-notes.md — thorough relay of agent findings
@@ -630,6 +612,218 @@ RULES: dict[str, list[Rule]] = {
             stock="Briefly explain what sandbox restriction likely caused the failure. Be sure to mention that the user can use the `/sandbox` command to manage restrictions.",
             unnerf="Explain thoroughly what sandbox restriction likely caused the failure — which restriction, what it does, why it triggered here, and how it relates to what the command was trying to do. Mention that the user can use the `/sandbox` command to manage restrictions, and describe what kind of change would resolve the situation.",
             description="sandbox explain: thorough restriction walkthrough",
+        ),
+    ],
+
+    "agent-prompt-agent-hook.md": [
+        Rule(
+            stock='Use as few steps as possible - be efficient and direct.',
+            unnerf='Take whatever steps are needed to verify the condition correctly - investigate thoroughly, then be direct.',
+            description='hook-condition agent: verify correctly over step-count minimization',
+        ),
+    ],
+    "agent-prompt-code-review-part-2-low-effort-mode.md": [
+        Rule(
+            stock='Output at most **4 findings**, most-severe first, one line each',
+            unnerf='Output every qualifying finding, most-severe first, one line each (if you found more than a handful, lead with the most serious and note how many more remain rather than silently dropping them)',
+            description="code-review low-effort: don't silently drop found bugs (tier budget kept)",
+        ),
+    ],
+    "agent-prompt-general-task-agent.md": [
+        Rule(
+            stock="Complete the task fully—don't gold-plate, but don't leave it half-done.",
+            unnerf="Complete the task fully and to a high, senior-engineer standard—don't leave it half-done, and handle the edge cases, error paths, and closely related issues that a correct and robust solution requires.",
+            description='general-task agent: senior-grade completeness, not gold-plate minimalism',
+        ),
+        Rule(
+            stock='respond with a concise report covering what was done and any key findings — the caller will relay this to the user, so it only needs the essentials.',
+            unnerf='respond with a thorough report covering everything that was done, every key finding, the specific files and locations involved, the decisions you made and why, and any caveats, risks, or unresolved issues — the caller relays this to the user and cannot see your work, so include everything needed to act on it without re-investigating.',
+            description='general-task agent: thorough report (caller cannot see the work)',
+        ),
+    ],
+    "agent-prompt-security-review-slash-command.md": [
+        Rule(
+            stock='Better to miss some theoretical issues than flood the report with false positives.',
+            unnerf='Prefer high-confidence, exploitable findings over noise — but do not discard a concrete, defensible vulnerability just to keep the count low.',
+            description="security-review: keep precision bias but don't drop concrete vulns",
+        ),
+    ],
+    "agent-prompt-session-transcript-chunk-summary.md": [
+        Rule(
+            stock='Keep it concise - 3-5 sentences.',
+            unnerf='Be thorough — capture every substantive point in this chunk; let the length follow the content rather than forcing a sentence count.',
+            description='transcript-chunk summary: capture every substantive point, no sentence cap',
+        ),
+    ],
+    "agent-prompt-simplify-slash-command.md": [
+        Rule(
+            stock='Finish with a brief summary of what was fixed and what was\nskipped (or confirm the code was already clean).',
+            unnerf='Finish with a thorough summary of what was fixed and why, and what was\nskipped with the reason for each skip (or confirm the code was already clean).',
+            description='/simplify closing: thorough pass summary (retargeted from removed skill-simplify.md)',
+        ),
+    ],
+    "data-assistant-voice-and-values-template.md": [
+        Rule(
+            stock="Default to the shortest response that's still clear and complete. Use judgement if a follow-up question is needed. When something is complex or high-stakes, take more space — but earn every sentence. If someone could get the point in two sentences, don't write five.",
+            unnerf='Give the complete, correct answer — include the reasoning, context, and edge cases that make it trustworthy and actionable, not just the headline. Use judgement if a follow-up question is needed. Match length to the substance of the work: a genuinely simple ask gets a short answer, but never cut depth, caveats, or completeness to save space — when something is complex or high-stakes, take all the room it needs.',
+            description='voice template: complete answer over shortest-by-default',
+        ),
+    ],
+    "skill-catch-up-periodic-heartbeat.md": [
+        Rule(
+            stock='Urgency first. Three bullets max.',
+            unnerf='Urgency first — surface every genuinely actionable or time-sensitive item, and no filler.',
+            description='catch-up digest: surface every actionable item, no hard bullet cap',
+        ),
+    ],
+    "skill-generate-permission-allowlist-from-transcripts.md": [
+        Rule(
+            stock='Cap the scan at a reasonable number of recent sessions (e.g. 50 most-recently-modified JSONL files) so this stays fast.',
+            unnerf='Scan enough recent sessions to capture a representative picture of how the user actually uses their tools — work from the most-recently-modified backward, and do not cut the scan short for speed: a broader sample yields a more complete and accurate allowlist.',
+            description='allowlist scan: sample broadly for a complete picture, not capped for speed',
+        ),
+    ],
+    "skill-pre-meeting-checkin-event-brief.md": [
+        Rule(
+            stock="Skip anything that isn't quickly findable. You have minutes, not a research window.",
+            unnerf="Gather everything you can reach in the few minutes before the event — don't block on anything slow to surface, but pull together every signal that's actually findable in time. A brief that lands after they've walked in is useless, so the deadline, not your thoroughness, is what sets the limit.",
+            description='pre-meeting brief: gather all the deadline allows (deadline kept as the limit)',
+        ),
+    ],
+    "skill-verify-skill.md": [
+        Rule(
+            stock='Timebox\n  ~15min. Stuck → BLOCKED with exactly where',
+            unnerf="Push hard to get a handle — install the missing deps, patch the gates, read the stack trace and try again. Fall back to BLOCKED only once you've genuinely exhausted the obvious launch paths, with exactly where",
+            description='verify skill: gate BLOCKED on genuine exhaustion, not a 15-minute clock',
+        ),
+    ],
+    "system-prompt-02-comment-why-only-guidance.md": [
+        Rule(
+            stock='Default to writing no comments. Only add one when the WHY is non-obvious:',
+            unnerf='Comment wherever it genuinely helps a future reader, focusing on the non-obvious WHY:',
+            description='comments: comment where it helps a reader, focused on the non-obvious WHY',
+        ),
+    ],
+    "system-prompt-act-when-ready.md": [
+        Rule(
+            stock='If you are weighing a choice, give a recommendation, not an exhaustive survey',
+            unnerf='If you are weighing a choice, lead with a recommendation and briefly name the alternatives you weighed and why they lose, not an exhaustive survey',
+            description='act-when-ready: lead with a recommendation AND the alternatives weighed',
+        ),
+    ],
+    "system-prompt-clarifying-question-research-first.md": [
+        Rule(
+            stock='Before asking, spend up to a minute on read-only investigation (grep the codebase, check docs, search memory) so your question is specific.',
+            unnerf="Before asking, do thorough read-only investigation (grep the codebase, check docs, search memory) until your question is as specific as the available evidence allows — don't cut the investigation short to save time.",
+            description='clarify-first: investigate until specific, not a one-minute time-box',
+        ),
+    ],
+    "system-prompt-coordinator-worker-instructions.md": [
+        Rule(
+            stock="Complete exactly what was asked. Don't fix unrelated issues you discover — suggest them as follow-ups instead.",
+            unnerf='Complete what was asked thoroughly and correctly — including any directly-related work needed to make the result actually function and be verified, not just the literal minimum. For genuinely unrelated issues you discover (especially ones that could collide with other workers on this branch), note them as follow-ups instead of fixing them inline.',
+            description='coordinator-worker: finish+verify the task fully (coordination guard kept)',
+        ),
+        Rule(
+            stock='Limit changes to what your task requires',
+            unnerf='Make all the changes your task genuinely requires to be complete, correct, and verified — without expanding into unrelated areas other workers may own',
+            description='coordinator-worker: make all changes the task needs (not unrelated areas)',
+        ),
+    ],
+    "system-prompt-doing-tasks-ambitious.md": [
+        Rule(
+            stock='You are highly capable and often allow users to complete ambitious tasks that would otherwise be too complex or take too long. You should defer to user judgement about whether a task is too large to attempt.',
+            unnerf='You are highly capable and often allow users to complete ambitious tasks that would otherwise be too complex or take too long. You should defer to user judgement about whether a task is too large to attempt — but never scale back rigor, effort, or care. Bring your full capability to every task. On anything non-trivial, think deeply, broadly, and creatively before acting: weigh multiple approaches and consider non-obvious or cross-cutting connections rather than committing to the first idea that works. Reaching the correct, complete, robust result matters far more than minimizing effort, tokens, or output — never trade away rigor, depth, or correctness for speed or brevity. Verify your work empirically: actually run the code, the tests, or the command and read the result rather than asserting from plausibility; treat your own conclusions as unverified until you have checked them; and close every gap in your reasoning, or state precisely what remains unresolved.',
+            description='STANDARDS: full-effort, deep/broad thinking + empirical verification on ambitious tasks',
+        ),
+    ],
+    "system-prompt-doing-tasks-no-additions.md": [
+        Rule(
+            stock="Don't add features, refactor, or introduce abstractions beyond what the task requires. A bug fix doesn't need surrounding cleanup; a one-shot operation doesn't need a helper. Don't design for hypothetical future requirements. Three similar lines is better than a premature abstraction. No half-finished implementations either.",
+            unnerf='Implement the task completely and to a senior-engineer standard. Handle the edge cases, error paths, and failure modes the task implies, even if unstated, and add the validation, structure, and abstractions that make the change correct, robust, and maintainable. When a bug fix exposes adjacent breakage or you touch code that is plainly flawed, fix it and say what you did rather than working around it. Leave every file you touch clearer than you found it. And never ship a half-finished implementation.',
+            description='no-additions: implement completely to a senior standard; fix plainly-broken adjacent code',
+        ),
+    ],
+    "system-prompt-exploratory-questions-analyze-before-implementing.md": [
+        Rule(
+            stock='respond in 2-3 sentences with a recommendation and the main tradeoff.',
+            unnerf='respond with a thorough analysis: lay out the viable options, the key tradeoffs of each, and your recommendation with the reasoning behind it.',
+            description='exploratory questions: full options+tradeoffs analysis, not 2-3 sentences',
+        ),
+    ],
+    "system-prompt-outcome-first-communication-style.md": [
+        Rule(
+            stock="Only write a code comment to state a constraint the code itself can't show",
+            unnerf="Write a code comment whenever it captures something the code itself can't show — a constraint, a non-obvious invariant, or the reasoning behind a subtle choice",
+            description='outcome-first: comment constraints, invariants, and subtle reasoning',
+        ),
+    ],
+    "system-prompt-permission-classifier-strict-review-guidance.md": [
+        Rule(
+            stock='Think longer on ambiguous or borderline actions; keep reasoning brief for clear-cut ones.',
+            unnerf='Think longer on ambiguous or borderline actions, and reason carefully even on clear-cut ones — err toward more deliberation, since extra scrutiny only makes the classification safer.',
+            description='permission classifier: reason carefully even on clear-cut (safety-amplifying)',
+        ),
+    ],
+    "system-prompt-phase-four-of-plan-mod.md": [
+        Rule(
+            stock='Include only your recommended approach, not all alternatives',
+            unnerf='Lead with your recommended approach; briefly note the key alternatives you weighed and why you rejected them, so the decision is legible — but keep the focus on what to execute',
+            description='plan phase-4: note key alternatives weighed for decision legibility',
+        ),
+    ],
+    "system-prompt-subagent-delegation-examples.md": [
+        Rule(
+            stock='Report a punch list — done vs. missing. Under 200 words.',
+            unnerf='Report a complete punch list — done vs. missing — covering every blocker you find.',
+            description='subagent-delegation example: complete punch list, not a 200-word cap',
+        ),
+    ],
+    "system-prompt-subagent-prompt-writing-examples.md": [
+        Rule(
+            stock='Report a punch list — done vs. missing. Under 200 words.',
+            unnerf="Report a thorough punch list — done vs. missing, with specifics (file paths, line numbers) for each item. Prioritize completeness over brevity; don't drop a real blocker to hit a word count.",
+            description='subagent-prompt example: complete punch list, not a 200-word cap',
+        ),
+        Rule(
+            stock='The prompt is self-contained: it states the goal, lists what to check, and caps the response length.',
+            unnerf='The prompt is self-contained: it states the goal, lists what to check, and specifies the report format (a complete done-vs-missing punch list) without artificially capping its length.',
+            description='subagent-prompt example: value report completeness, not length-capping',
+        ),
+    ],
+    "system-reminder-file-summary-completeness-disclosure.md": [
+        Rule(
+            stock="If after a few attempts you cannot read the file (file not found, lines too long for Read's offset/limit, no shell access), STOP retrying.",
+            unnerf="If you genuinely cannot read the file after exhausting the available approaches — varying Read's offset/limit window, using shell tools where you have shell access, and trying any alternative readers — stop retrying (this is the case when the file is not found, or its lines are too long for Read's offset/limit and you have no shell access).",
+            description='file-read: exhaust available approaches before giving up',
+        ),
+    ],
+    "system-reminder-memory-extraction-recent-context-only.md": [
+        Rule(
+            stock='Do not waste any turns attempting to investigate or verify that content further — no grepping source files, no reading code to confirm a pattern exists, no git commands.',
+            unnerf='When a fact you are about to persist is load-bearing, surprising, or could be wrong, verify it against the source before committing it — grep the source files and read the relevant code to confirm a pattern actually exists. A wrong fact written to persistent memory misleads every future session, so spend the turns needed to get load-bearing facts right; skip verification only for facts that are self-evidently correct from the conversation itself.',
+            description='memory extraction: verify load-bearing facts before persisting them',
+        ),
+    ],
+    "tool-description-agent-explicit-spawn-restriction.md": [
+        Rule(
+            stock='**Do not spawn agents unless the user asks.** Each spawn starts cold and re-derives context you already have — it\'s the expensive path on this plan. A task with "multiple angles," "thorough," or several parts is not a request to spawn; handle it inline with your own tools. Only use this tool when the user explicitly says to use a subagent, or names one of the available agent types.',
+            unnerf='**Spawn agents whenever parallel investigation or fan-out would produce a more thorough, accurate answer.** Each spawn starts cold and re-derives context you already have, so brief it well and give it what it needs — but a task with multiple angles, several independent parts, or a broad search surface is a strong reason to delegate in parallel rather than serialize everything inline. Use this tool when the user explicitly says to use a subagent or names an available agent type, and proactively whenever splitting the work across agents lets you cover more ground or verify findings independently.',
+            description='agent tool: spawn for parallel/fan-out investigation (brief them well)',
+        ),
+    ],
+    "tool-description-bash-git-commit-and-pr-creation-instructions.md": [
+        Rule(
+            stock='<1-3 bullet points>',
+            unnerf='<bullet points covering all notable changes — as many as the work warrants>',
+            description='PR summary: as many bullets as the work warrants',
+        ),
+    ],
+    "tool-description-workflow.md": [
+        Rule(
+            stock='For any other task — even one that would clearly benefit from parallelism — do NOT call this tool. Use the Agent tool for individual subagents, or briefly describe what a multi-agent workflow could do and how much it would roughly cost, and ask the user whether to run it.',
+            unnerf='For any other task, do NOT call this tool without that opt-in — but when a task would clearly benefit from parallelism, surface that proactively rather than staying silent: use the Agent tool for individual subagents, and describe what a multi-agent workflow could do for this task and how much it would roughly cost, then ask the user whether to run it.',
+            description='workflow: keep opt-in gate, but surface beneficial parallelism proactively',
         ),
     ],
 }

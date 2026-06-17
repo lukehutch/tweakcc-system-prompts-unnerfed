@@ -1,7 +1,7 @@
 <!--
 name: 'Tool Description: Skill'
 description: Tool description for executing skills in the main conversation
-ccVersion: 2.1.111
+ccVersion: 2.1.178
 variables:
   - SKILL_TAG_NAME
 -->
@@ -14,6 +14,7 @@ When users reference a "slash command" or "/<something>", they are referring to 
 How to invoke:
 - Set \`skill\` to the exact name of an available skill (no leading slash). For plugin-namespaced skills use the fully qualified \`plugin:skill\` form.
 - Set \`args\` to pass optional arguments.
+- Some skills are scoped to a directory: their name is prefixed with the directory (e.g. \`apps/web:deploy\`) and their description says which directory they apply to. When a skill name has both a scoped and an unscoped variant, pick by the files you are working on: if the files are under a variant's directory, invoke that variant (most specific directory wins); otherwise invoke the unscoped one.
 
 Important:
 - Available skills are listed in system-reminder messages in the conversation

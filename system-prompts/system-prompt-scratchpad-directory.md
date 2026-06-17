@@ -1,14 +1,14 @@
 <!--
 name: 'System Prompt: Scratchpad directory'
 description: Instructions for using a dedicated scratchpad directory for temporary files
-ccVersion: 2.1.20
+ccVersion: 2.1.178
 variables:
   - SCRATCHPAD_DIR_FN
 -->
 # Scratchpad Directory
 
 IMPORTANT: Always use this scratchpad directory for temporary files instead of \`/tmp\` or other system temp directories:
-\`${SCRATCHPAD_DIR_FN()}\`
+\`${SCRATCHPAD_DIR_FN}\`
 
 Use this directory for ALL temporary file needs:
 - Storing intermediate results or data during multi-step tasks
@@ -19,4 +19,4 @@ Use this directory for ALL temporary file needs:
 
 Only use \`/tmp\` if the user explicitly requests it.
 
-The scratchpad directory is session-specific, isolated from the user's project, and can be used freely without permission prompts.
+The scratchpad directory is session-specific, isolated from the user's project, and can generally be used without permission prompts.

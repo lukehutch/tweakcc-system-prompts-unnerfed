@@ -4,7 +4,7 @@ description: >-
   Skill definition for the /catch-up periodic heartbeat that scans current
   priorities, triages actionable changes, reports a short digest, and updates
   catch-up state
-ccVersion: 2.1.119
+ccVersion: 2.1.161
 -->
 ---
 name: catch-up
@@ -15,7 +15,7 @@ context: fork
 
 # Catch-Up
 
-This fires every two hours (schedule lives in \`.claude/scheduled_tasks.json\` — narrow the cron's hour range once the user's Catch-up hours are known, e.g. \`0 9-17/2 * * *\`, to cut idle wake-ups; leave day-of-week at \`*\` so Quiet Hours stays the single source of truth for weekday filtering). Runs in a forked sub-agent. Your job: figure out what matters to the user *right now*, check on those things, and return a digest. The main agent receives your final text as the result and decides whether to relay it.
+This fires every two hours (schedule lives in \`.claude/scheduled_tasks.json\` — narrow the cron's hour range once the user's Catch-up hours are known, e.g. \`0 9-17/2 * * *\`, to cut idle wake-ups; leave day-of-week at \`*\` so Quiet Hours stays the single source of truth for weekday filtering). Runs in a forked subagent. Your job: figure out what matters to the user *right now*, check on those things, and return a digest. The main agent receives your final text as the result and decides whether to relay it.
 
 **Silence is the default.** Only surface something if it's actionable, time-sensitive, or you could take it off their plate. A noisy catch-up trains the user to ignore you.
 
@@ -111,7 +111,7 @@ Main agent won't relay this.
 · <assistant-can-act item> — I can <proposed action>. Say go.
 \`\`\`
 
-Urgency first. Three bullets max. If there's more, your noise floor is too low or your priorities list is too wide.
+Urgency first — surface every genuinely actionable or time-sensitive item, and no filler. If there's more, your noise floor is too low or your priorities list is too wide.
 
 ---
 

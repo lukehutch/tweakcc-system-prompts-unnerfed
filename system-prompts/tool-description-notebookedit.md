@@ -1,6 +1,16 @@
 <!--
 name: 'Tool Description: NotebookEdit'
-description: Tool description for editing Jupyter notebook cells
-ccVersion: 2.0.14
+description: >-
+  Tool description for editing Jupyter notebook cells by replacing, inserting,
+  or deleting a cell using cell IDs from the read tool
+ccVersion: 2.1.162
+variables:
+  - READ_TOOL_NAME
 -->
-Completely replaces the contents of a specific cell in a Jupyter notebook (.ipynb file) with new source. Jupyter notebooks are interactive documents that combine code, text, and visualizations, commonly used for data analysis and scientific computing. The notebook_path parameter must be an absolute path, not a relative path. The cell_number is 0-indexed. Use edit_mode=insert to add a new cell at the index specified by cell_number. Use edit_mode=delete to delete the cell at the index specified by cell_number.
+Replaces, inserts, or deletes a single cell in a Jupyter notebook (.ipynb file).
+
+Usage:
+- You must use the ${READ_TOOL_NAME} tool on the notebook in this conversation before editing — this tool will fail otherwise.
+- \`notebook_path\` must be an absolute path.
+- \`cell_id\` is the \`id\` attribute shown in the ${READ_TOOL_NAME} tool's \`<cell id="...">\` output. It is required for \`replace\` and \`delete\`.
+- \`edit_mode\` defaults to \`replace\`. Use \`insert\` to add a new cell after the cell with the given \`cell_id\` (or at the beginning of the notebook if \`cell_id\` is omitted) — \`cell_type\` is required when inserting. Use \`delete\` to remove the cell.

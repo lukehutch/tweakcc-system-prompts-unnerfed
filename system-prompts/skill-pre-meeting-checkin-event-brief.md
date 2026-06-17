@@ -28,7 +28,7 @@ Given what's in the args, assemble:
 - **Open questions** — is there something they were supposed to decide, prepare, or bring? Check \`catch-up-state.json\` priorities for anything tagged to this event.
 - **Last time** — if this is a recurring meeting, what happened last occurrence? Memory or docs.
 
-Skip anything that isn't quickly findable. You have minutes, not a research window.
+Gather everything you can reach in the few minutes before the event — don't block on anything slow to surface, but pull together every signal that's actually findable in time. A brief that lands after they've walked in is useless, so the deadline, not your thoroughness, is what sets the limit.
 
 ---
 

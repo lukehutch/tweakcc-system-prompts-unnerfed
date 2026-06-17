@@ -4,7 +4,7 @@ description: >-
   Reference documentation for the Managed Agents API covering core concepts
   (Agents, Sessions, Environments, Containers), lifecycle, versioning,
   endpoints, and usage patterns
-ccVersion: 2.1.142
+ccVersion: 2.1.172
 -->
 # Managed Agents — Core Concepts
 
@@ -140,7 +140,7 @@ const session = await client.beta.sessions.create(
 | \`environment_id\`| string   | **Yes**  | Environment ID                                 |
 | \`title\`         | string   | No       | Human-readable name (appears in logs/dashboards) |
 | \`resources\`     | array    | No       | Files, GitHub repos, or memory stores, attached to the container at startup. Memory stores are session-create-only (not addable via \`resources.add()\`). |
-| \`vault_ids\`     | array    | No       | Vault IDs (\`vlt_*\`) — MCP credentials with auto-refresh. See \`shared/managed-agents-tools.md\` → Vaults. |
+| \`vault_ids\`     | array    | No       | Vault IDs (\`vlt_*\`) — MCP credentials with auto-refresh + \`environment_variable\` secrets substituted at egress. See \`shared/managed-agents-tools.md\` → Vaults. |
 | \`metadata\`      | object   | No       | User-provided key-value pairs                  |
 
 **Agent configuration fields** (passed to \`agents.create()\`, not \`sessions.create()\`):
@@ -237,6 +237,24 @@ session = client.beta.sessions.create(
 session = client.beta.sessions.create(
     agent={"type": "agent", "id": agent.id, "version": agent.version},
     environment_id=environment_id,
+)
+\`\`\`
+
+### Updating the agent configuration mid-session
+
+\`sessions.update()\` can change \`agent.tools\`, \`agent.mcp_servers\` (including permission policies), and \`vault_ids\` on an **existing** session. This is a **session-local override** — it does not create a new agent version and does not propagate back to the agent object. The provided arrays are **full replacements**; to append one tool, \`GET\` the session, modify, and \`POST\` back. The session must be \`idle\` — interrupt first if running.
+
+\`\`\`python
+client.beta.sessions.update(
+    session.id,
+    agent={
+        "tools": [
+            {"type": "agent_toolset_20260401"},
+            {"type": "mcp_toolset", "mcp_server_name": "linear"},
+        ],
+        "mcp_servers": [{"type": "url", "name": "linear", "url": "https://mcp.linear.app/sse"}],
+    },
+    vault_ids=["vlt_..."],
 )
 \`\`\`
 

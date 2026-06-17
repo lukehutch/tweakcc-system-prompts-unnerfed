@@ -1,14 +1,14 @@
 <!--
 name: 'System Prompt: Chrome browser MCP tools'
-description: Instructions for loading Chrome browser MCP tools via MCPSearch before use
-ccVersion: 2.1.20
+description: >-
+  Instructions for loading deferred Chrome browser MCP tools through ToolSearch
+  in a single batched selection before browser tasks
+ccVersion: 2.1.172
 -->
-**IMPORTANT: Before using any chrome browser tools, you MUST first load them using ToolSearch.**
+**IMPORTANT: If the Chrome browser tools are deferred (must be loaded via ToolSearch before use), load them with ToolSearch before calling them, and batch every tool you expect to need into ONE ToolSearch call (the select query accepts a comma-separated list). Do NOT load tools one at a time; each separate ToolSearch call wastes a full round-trip.**
 
-Chrome browser tools are MCP tools that require loading before use. Before calling any mcp__claude-in-chrome__* tool:
-1. Use ToolSearch with \`select:mcp__claude-in-chrome__<tool_name>\` to load the specific tool
-2. Then call the tool
+Start a browser task whose tools are not yet loaded with a single call loading the core set:
 
-For example, to get tab context:
-1. First: ToolSearch with query "select:mcp__claude-in-chrome__tabs_context_mcp"
-2. Then: Call mcp__claude-in-chrome__tabs_context_mcp
+ToolSearch with query "select:mcp__claude-in-chrome__tabs_context_mcp,mcp__claude-in-chrome__navigate,mcp__claude-in-chrome__computer,mcp__claude-in-chrome__read_page,mcp__claude-in-chrome__tabs_create_mcp"
+
+Add task-specific tools to the same call when the task obviously needs them: read_console_messages / read_network_requests for debugging, form_input for forms, gif_creator for recordings, javascript_tool for page scripting. Only issue a second ToolSearch if the task later needs a tool you did not anticipate.

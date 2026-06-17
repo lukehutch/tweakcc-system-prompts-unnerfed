@@ -3,7 +3,7 @@ name: 'Data: Managed Agents environments and resources'
 description: >-
   Reference documentation covering Managed Agents environments, file resources,
   GitHub repository mounting, and the Files API with SDK examples
-ccVersion: 2.1.119
+ccVersion: 2.1.145
 -->
 # Managed Agents — Environments & Resources
 
@@ -15,21 +15,25 @@ Creating a session requires an \`environment_id\`. Environments are **reusable c
 
 ### Networking
 
-| Network Policy                  | Description                                                   |
-| ------------------------------- | ------------------------------------------------------------- |
-| \`unrestricted\`                  | Full egress (except legal blocklist)                          |
-| \`package_managers_and_custom\`   | Package managers + custom \`allowed_hosts\`                      |
+| Network Policy   | Description                                                   |
+| ---------------- | ------------------------------------------------------------- |
+| \`unrestricted\`   | Full egress (except legal blocklist)                          |
+| \`limited\`        | Deny-by-default; opt in via \`allowed_hosts\` / \`allow_package_managers\` / \`allow_mcp_servers\` |
 
 \`\`\`json
 {
   "networking": {
-    "type": "package_managers_and_custom",
+    "type": "limited",
+    "allow_package_managers": true,
+    "allow_mcp_servers": true,
     "allowed_hosts": ["api.example.com"]
   }
 }
 \`\`\`
 
-**MCP caveat:** If using restricted networking, make sure \`allowed_hosts\` includes your MCP server domains. Otherwise the container can't reach them and tools silently fail.
+All three \`limited\` fields are optional. \`allow_package_managers\` (default \`false\`) permits PyPI/npm/etc.; \`allow_mcp_servers\` (default \`false\`) permits the agent's configured MCP server endpoints without listing them in \`allowed_hosts\`.
+
+**MCP caveat:** Under \`limited\` networking, either set \`allow_mcp_servers: true\` or add each MCP server domain to \`allowed_hosts\`. Otherwise the container can't reach them and tools silently fail.
 
 ### Creating an environment
 
@@ -44,6 +48,10 @@ const env = await client.beta.environments.create({
   },
 });
 \`\`\`
+
+### Self-hosted sandboxes
+
+To run tool execution in **your own infrastructure** instead of Anthropic's, set \`config: {type: "self_hosted"}\` — the agent loop stays on Anthropic's side, but \`bash\` / file ops / code execute in a container you control via an outbound-polling worker. The \`networking\` block does not apply (you control egress). Resource mounting (\`file\`, \`github_repository\`) and memory stores behave differently — see \`shared/managed-agents-self-hosted-sandboxes.md\` for the worker, credentials, and cloud-vs-self-hosted comparison.
 
 ### Environment CRUD
 

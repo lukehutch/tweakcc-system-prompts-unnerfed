@@ -4,7 +4,7 @@ description: >-
   Reference documentation for the ant CLI covering installation, authentication,
   command structure, input and output shaping, managed agents workflows, and
   scripting patterns
-ccVersion: 2.1.118
+ccVersion: 2.1.169
 -->
 # Anthropic CLI (`ant`)
 
@@ -36,7 +36,49 @@ curl -fsSL \"https://github.com/anthropics/anthropic-cli/releases/download/v${VE
 go install github.com/anthropics/anthropic-cli/cmd/ant@latest
 ```
 
-Auth is `ANTHROPIC_API_KEY` from the environment. Override the host with `ANTHROPIC_BASE_URL` or `--base-url`.
+**Auth** — the CLI resolves credentials the same way the SDKs do (first match wins): explicit flags, then `ANTHROPIC_API_KEY`, then `ANTHROPIC_AUTH_TOKEN`, then the `ANTHROPIC_PROFILE`-selected or active profile, then Workload Identity Federation env vars, then the default profile on disk. Override the host with `ANTHROPIC_BASE_URL` or `--base-url`.
+
+- **API key**: set `ANTHROPIC_API_KEY` in the environment.
+- **OAuth profile** (no static key to manage): `ant auth login` opens a browser, exchanges for a short-lived token, and stores a profile under `$ANTHROPIC_CONFIG_DIR` (default `~/.config/anthropic/` on Linux/macOS, `%APPDATA%\\Anthropic` on Windows — `configs/<profile>.json` for settings, `credentials/<profile>.json` for tokens). Subsequent `ant` (and SDK) calls pick it up automatically — a bare `Anthropic()` client works after login, but scripts that read `ANTHROPIC_API_KEY` directly do not. Claude Code and the Claude Agent SDK honor the same profile resolution. `ant auth status` shows which credential source and profile won (it reports status only — don't script against its exit code as a health check); `ant auth logout` clears the active profile (`--all` for every profile). On a remote host without a browser, `ant auth login --no-browser` prints the authorize URL and accepts the code back in the terminal.
+- **Non-interactive workloads** (CI, servers, containers): interactive login is for development on your own machine — use Workload Identity Federation instead (see the authentication docs via `shared/live-sources.md`).
+
+> **The #1 auth trap:** profiles are only consulted when no API key is set. A stale exported `ANTHROPIC_API_KEY` silently overrides every profile — requests hit whatever org/workspace that key is scoped to. `ant auth status` shows which source won; unset the key (or per-command: `env -u ANTHROPIC_API_KEY ant …`) before relying on a profile. Truly **unset** it — an empty `ANTHROPIC_API_KEY=\"\"` still wins its precedence slot and authenticates with an empty key. The same shadowing applies in reverse to Claude Code: after `ant auth login`, Claude Code may warn about an auth conflict between the profile and its own `/login` credential — keep one (use the profile and `/logout` in Claude Code, or `ant auth logout` to keep Claude Code's own login).
+
+**Named profiles** — an interactive-login token is bound to a single org+workspace, and the API only shows resources belonging to that workspace. If an agent, session, or file you created \"disappears\", the usual cause is a token scoped to a different workspace than the one that created it (`ant auth status` shows the active workspace). Multi-workspace work means one profile per workspace:
+
+```sh
+ant auth login --profile <name>                  # creates the profile if it doesn't exist; org/workspace picker in browser
+ant auth login --profile <name> --workspace-id wrkspc_01...   # bind directly, skip the picker
+ant profile activate <name>                      # switch the default profile
+ant --profile <name> models list                 # one-off; equivalent: ANTHROPIC_PROFILE=<name> ant models list
+ant profile list                                 # inspect
+ant profile set workspace_id wrkspc_01... --profile <name>    # edit config keys (workspace_id, base_url, organization_id, …)
+```
+
+`ant profile set` edits an existing profile's config — it never creates one, and it does **not** rebind already-issued credentials; run `ant auth login` again under that profile to mint a token for the new target. Pointing `ANTHROPIC_PROFILE` at a profile that doesn't exist is an error, not a fall-through. Refresh tokens eventually hard-expire (they don't slide with use) — when a previously working profile starts failing auth, re-run `ant auth login` before debugging anything else.
+
+**Scopes** — a profile's OAuth scope set is requested at login (`--scope`) and persists on the profile (`scope` is also a `profile set` config key; like other config edits, changing it requires a fresh `ant auth login` to take effect). Privileged scopes — e.g. `org:admin` for organization-administration endpoints — are **not** in the default scope set: pass the full set you want explicitly (`ant auth login --profile admin --scope \"... org:admin\"`), and the server grants a privileged scope only if your role actually has it. Because the scope set rides on every token the profile mints, keep privileged work on a dedicated profile (`admin` vs `default`) and do day-to-day inference on the unprivileged one, switching with `--profile`/`ANTHROPIC_PROFILE`. Check `ant auth login --help` for the current scope list, and `ant auth status` to see what the active token carries.
+
+To hand the active credential to a subprocess or raw-HTTP script:
+
+```sh
+# Bare access token — for curl's Authorization header
+curl https://api.anthropic.com/v1/messages \\
+  -H \"Authorization: Bearer $(ant auth print-credentials --access-token)\" \\
+  -H \"anthropic-version: 2023-06-01\" \\
+  -H \"anthropic-beta: oauth-2025-04-20\" \\
+  -H \"content-type: application/json\" \\
+  -d '{\"model\": \"{{OPUS_ID}}\", \"max_tokens\": 1024, \"messages\": [{\"role\": \"user\", \"content\": \"Hello\"}]}'
+
+# .env format — sets ANTHROPIC_AUTH_TOKEN (and ANTHROPIC_BASE_URL if the profile has one).
+# Output is bare KEY=value (no `export`), so use `set -a` to auto-export for child processes:
+set -a; eval \"$(ant auth print-credentials --env)\"; set +a
+python my_script.py   # SDK picks up ANTHROPIC_AUTH_TOKEN
+```
+
+OAuth tokens go on `Authorization: Bearer` (not `x-api-key:`) **plus the `anthropic-beta: oauth-2025-04-20` header** — converting a raw curl/httpx script from an API key is a header change, not a key swap. The beta header requirement is endpoint-dependent (some endpoints happen to work without it; `/v1/messages` does not) — always send it so requests don't break when you switch endpoints. The token is short-lived and not auto-refreshed when passed via env var, so re-run `print-credentials` before it expires for long-running scripts (`print-credentials` itself refreshes the token if needed). If both `ANTHROPIC_API_KEY` and `ANTHROPIC_AUTH_TOKEN` are set, the SDKs send both and the API rejects the request — unset `ANTHROPIC_API_KEY` before `eval`ing the `--env` output.
+
+**Foot-gun:** `ant auth print-credentials` with **no flags** prints the entire credentials JSON, not the bare token — putting that in an `Authorization` header yields an empty response or HTTP/2 protocol error. Always use `--access-token` for headers (it always reads the named/active profile; a set `ANTHROPIC_API_KEY` doesn't override credential printing).
 
 ## Command structure
 
@@ -44,7 +86,7 @@ Auth is `ANTHROPIC_API_KEY` from the environment. Override the host with `ANTHRO
 ant <resource>[:<subresource>] <action> [flags]
 ```
 
-Beta resources (agents, sessions, environments, deployments, skills, vaults, memory stores) live under `beta:` — the CLI auto-sends the right `anthropic-beta` header, so don't pass it yourself unless overriding with `--beta <header>`.
+Beta resources (agents, sessions, environments, deployments, skills, vaults, memory stores) live under `beta:` — the CLI auto-sends the right `anthropic-beta` header, so don't pass it yourself unless overriding with `--beta <header>`. For self-hosted environments, `ant beta:worker poll/run` and `ant beta:environments:work stats/stop` drive and monitor the work queue — see `shared/managed-agents-self-hosted-sandboxes.md`.
 
 ```sh
 ant models list

@@ -1,7 +1,7 @@
 <!--
 name: 'Tool Description: SendMessageTool'
 description: Agent teams version of SendMessageTool.
-ccVersion: 2.1.118
+ccVersion: 2.1.178
 -->
 
 # SendMessage
@@ -14,9 +14,10 @@ Send a message to another agent.
 
 | \`to\` | |
 |---|---|
-| \`"researcher"\` | Teammate by name |${""}
+| \`"researcher"\` | Teammate by name |
+| \`"main"\` | The main conversation (background subagents only) |${""}
 
-Your plain text output is NOT visible to other agents — to communicate, you MUST call this tool. Messages from teammates are delivered automatically; you don't check an inbox. Refer to teammates by name, never by UUID. When relaying, don't quote the original — it's already rendered to the user.${""}
+Your plain text output is NOT visible to other agents — to communicate, you MUST call this tool. Messages from teammates are delivered automatically; you don't check an inbox. Refer to active teammates by name; to resume a completed background agent, use the \`agentId\` (format \`a...-...\`) from its spawn result. When relaying, don't quote the original — it's already rendered to the user.${""}
 
 ## Protocol responses (legacy)
 

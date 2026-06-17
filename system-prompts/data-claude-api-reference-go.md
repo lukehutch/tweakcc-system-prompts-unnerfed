@@ -1,7 +1,7 @@
 <!--
 name: 'Data: Claude API reference — Go'
 description: Go SDK reference
-ccVersion: 2.1.128
+ccVersion: 2.1.176
 -->
 # Claude API — Go
 
@@ -34,7 +34,7 @@ client := anthropic.NewClient(
 
 ## Model Constants
 
-The Go SDK provides typed model constants: \`anthropic.ModelClaudeOpus4_7\`, \`anthropic.ModelClaudeOpus4_6\`, \`anthropic.ModelClaudeSonnet4_6\`, \`anthropic.ModelClaudeHaiku4_5_20251001\`. Use \`ModelClaudeOpus4_7\` unless the user specifies otherwise.
+The Go SDK provides typed model constants: \`anthropic.ModelClaudeFable5\`, \`anthropic.ModelClaudeOpus4_8\`, \`anthropic.ModelClaudeOpus4_7\`, \`anthropic.ModelClaudeSonnet4_6\`, \`anthropic.ModelClaudeHaiku4_5_20251001\`. Use \`ModelClaudeOpus4_8\` unless the user specifies otherwise; if they ask for Fable or the most powerful model, use \`anthropic.ModelClaudeFable5\` (see \`shared/models.md\` for the full resolution table).
 
 ---
 
@@ -42,7 +42,7 @@ The Go SDK provides typed model constants: \`anthropic.ModelClaudeOpus4_7\`, \`a
 
 \`\`\`go
 response, err := client.Messages.New(context.Background(), anthropic.MessageNewParams{
-    Model:     anthropic.ModelClaudeOpus4_7,
+    Model:     anthropic.ModelClaudeOpus4_8,
     MaxTokens: 16000,
     Messages: []anthropic.MessageParam{
         anthropic.NewUserMessage(anthropic.NewTextBlock("What is the capital of France?")),
@@ -65,7 +65,7 @@ for _, block := range response.Content {
 
 \`\`\`go
 stream := client.Messages.NewStreaming(context.Background(), anthropic.MessageNewParams{
-    Model:     anthropic.ModelClaudeOpus4_6,
+    Model:     anthropic.ModelClaudeOpus4_8,
     MaxTokens: 64000,
     Messages: []anthropic.MessageParam{
         anthropic.NewUserMessage(anthropic.NewTextBlock("Write a haiku")),
@@ -144,7 +144,7 @@ runner := client.Beta.Messages.NewToolRunner(
     []anthropic.BetaTool{weatherTool},
     anthropic.BetaToolRunnerParams{
         BetaMessageNewParams: anthropic.BetaMessageNewParams{
-            Model:     anthropic.ModelClaudeOpus4_6,
+            Model:     anthropic.ModelClaudeOpus4_8,
             MaxTokens: 16000,
             Messages: []anthropic.BetaMessageParam{
                 anthropic.NewBetaUserMessage(anthropic.NewBetaTextBlock("What's the weather in Paris?")),
@@ -366,10 +366,12 @@ When \`StopReason\` is \`anthropic.StopReasonRefusal\`, the response includes st
 
 \`\`\`go
 if resp.StopReason == anthropic.StopReasonRefusal {
-    fmt.Println("Category:", resp.StopDetails.Category)     // "cyber" | "bio" | ""
+    fmt.Println("Category:", resp.StopDetails.Category)     // e.g. "cyber", "bio", "reasoning_extraction", "frontier_llm", or "" — see docs for the full set
     fmt.Println("Explanation:", resp.StopDetails.Explanation)
 }
 \`\`\`
+
+**Refusal fallbacks ({{FABLE_NAME}}) — opt in by default.** Fallbacks are opt-in: without them a refused request simply stops. In \`{{FABLE_ID}}\` code, include \`Fallbacks: []anthropic.BetaFallbackParam{{Model: "{{OPUS_ID}}"}}\` plus the \`anthropic.AnthropicBetaServerSideFallback2026_06_01\` beta on \`client.Beta.Messages.New\` by default — a policy decline is re-served by the fallback model inside the same call. Not available on Amazon Bedrock, Vertex AI, or Microsoft Foundry — register the client-side middleware there: \`option.WithMiddleware(betafallback.BetaRefusalFallbackMiddleware(...))\` from \`lib/betafallback\`, with per-conversation state via \`betafallback.WithBetaFallbackState(&betafallback.BetaFallbackState{})\`. Full semantics (billing, sticky routing, streaming) and a runnable example: \`shared/model-migration.md\` → Migrating to {{FABLE_NAME}} → \`refusal\` stop reason, and the Go SDK repo's \`examples/\` (WebFetch via \`shared/live-sources.md\`).
 
 ---
 
@@ -415,7 +417,7 @@ Use \`Beta.Messages.New\` with \`ContextManagement\` on \`BetaMessageNewParams\`
 
 \`\`\`go
 params := anthropic.BetaMessageNewParams{
-    Model:     anthropic.ModelClaudeOpus4_6,  // also supported: ModelClaudeSonnet4_6
+    Model:     anthropic.ModelClaudeOpus4_8,  // also supported: ModelClaudeSonnet4_6
     MaxTokens: 16000,
     Betas:     []anthropic.AnthropicBeta{"compact-2026-01-12"},
     ContextManagement: anthropic.BetaContextManagementConfigParam{

@@ -138,7 +138,7 @@ CONFIDENCE SCORING:
 - Below 0.7: Don't report (too speculative)
 
 FINAL REMINDER:
-Focus on HIGH and MEDIUM findings only. Better to miss some theoretical issues than flood the report with false positives. Each finding should be something a security engineer would confidently raise in a PR review.
+Focus on HIGH and MEDIUM findings only. Prefer high-confidence, exploitable findings over noise — but do not discard a concrete, defensible vulnerability just to keep the count low. Each finding should be something a security engineer would confidently raise in a PR review.
 
 FALSE POSITIVE FILTERING:
 

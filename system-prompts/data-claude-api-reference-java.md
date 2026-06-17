@@ -3,7 +3,7 @@ name: 'Data: Claude API reference — Java'
 description: >-
   Java SDK reference including installation, client initialization, basic
   requests, streaming, and beta tool use
-ccVersion: 2.1.128
+ccVersion: 2.1.176
 -->
 # Claude API — Java
 
@@ -17,14 +17,14 @@ Maven:
 <dependency>
     <groupId>com.anthropic</groupId>
     <artifactId>anthropic-java</artifactId>
-    <version>2.27.0</version>
+    <version>2.34.0</version>
 </dependency>
 \`\`\`
 
 Gradle:
 
 \`\`\`groovy
-implementation("com.anthropic:anthropic-java:2.27.0")
+implementation("com.anthropic:anthropic-java:2.34.0")
 \`\`\`
 
 ## Client Initialization
@@ -52,7 +52,7 @@ import com.anthropic.models.messages.Message;
 import com.anthropic.models.messages.Model;
 
 MessageCreateParams params = MessageCreateParams.builder()
-    .model(Model.CLAUDE_OPUS_4_6)
+    .model(Model.CLAUDE_OPUS_4_8)
     .maxTokens(16000L)
     .addUserMessage("What is the capital of France?")
     .build();
@@ -72,7 +72,7 @@ import com.anthropic.core.http.StreamResponse;
 import com.anthropic.models.messages.RawMessageStreamEvent;
 
 MessageCreateParams params = MessageCreateParams.builder()
-    .model(Model.CLAUDE_OPUS_4_6)
+    .model(Model.CLAUDE_OPUS_4_8)
     .maxTokens(64000L)
     .addUserMessage("Write a haiku")
     .build();
@@ -379,7 +379,7 @@ import com.anthropic.models.beta.messages.BetaCodeExecutionTool20260120;
 import com.anthropic.models.beta.messages.BetaRequestMcpServerUrlDefinition;
 
 MessageCreateParams params = MessageCreateParams.builder()
-    .model(Model.CLAUDE_OPUS_4_6)
+    .model(Model.CLAUDE_OPUS_4_8)
     .maxTokens(16000L)
     .addBeta("mcp-client-2025-11-20")
     .addTool(BetaToolBash20250124.builder().build())
@@ -425,6 +425,8 @@ response.stopDetails().ifPresent(details -> {
     System.out.println("Explanation: " + details.explanation());
 });
 \`\`\`
+
+**Refusal fallbacks ({{FABLE_NAME}}) — opt in by default.** Fallbacks are opt-in: without them a refused request simply stops. New \`{{FABLE_ID}}\` code should include the server-side \`fallbacks\` parameter (beta header \`server-side-fallback-2026-06-01\`, fallback model \`{{OPUS_ID}}\`, on the beta messages call) by default. The exact Java builder methods (and the client-side middleware for providers without server-side support) are not documented here — WebFetch the Java SDK repo's \`examples/\` from \`shared/live-sources.md\`; full semantics in \`shared/model-migration.md\` → Migrating to {{FABLE_NAME}} → \`refusal\` stop reason.
 
 ---
 
