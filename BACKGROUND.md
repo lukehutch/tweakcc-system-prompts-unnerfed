@@ -28,9 +28,14 @@ tweakcc is the modern equivalent: same philosophy (edit the prompts), different 
 
 ## Which fork to use
 
-Upstream [Piebald-AI/tweakcc](https://github.com/Piebald-AI/tweakcc) is stuck at Claude Code v2.1.113 (last release: `4.0.11`, commit `2e1d03e`). Running it against v2.1.114+ fails because several patch regexes don't match the newer minified output, and some required PRs haven't merged.
+> [!NOTE]
+> **Updated for the v2.1.179 sync.** Upstream [Piebald-AI/tweakcc](https://github.com/Piebald-AI/tweakcc) has resumed releases (now `4.0.14`) and, on v2.1.179, **extracts, `unpack`s and `repack`s the binary correctly** — it is no longer stuck. The one remaining wrinkle is that a *bare* `tweakcc --apply` still tries tweakcc's UI patches (e.g. `patches-applied-indication`), whose regexes lag the newest CC, and that aborts the repack. The fix is to apply **only the system-prompt patches** (`--apply --patches "<ids>"`), which [`install.sh`](./install.sh) and the [MAINTENANCE](MAINTENANCE.md) workflow now do. With that, plain `npx tweakcc@latest` is sufficient for the prompt un-nerfs on v2.1.179.
 
-Use [**BenIsLegit/tweakcc-fixed**](https://github.com/BenIsLegit/tweakcc-fixed) instead. Published as [`tweakcc-fixed`](https://www.npmjs.com/package/tweakcc-fixed) on npm. It bundles upstream PRs (#601 WASMagic import guard, #646 React Compiler output support, #655 Bun bytecode fallback + `clearBytecode`, #664 `\"` handling) plus additional fixes (scoped backslash-doubling, `verbose:X` destructure guard, adapted minified-shape regexes, and a batch of `userMessageDisplay` theme/layout fixes). Targets Claude Code through **v2.1.142**.
+The history below is kept for context.
+
+Historically, upstream [Piebald-AI/tweakcc](https://github.com/Piebald-AI/tweakcc) lagged at Claude Code v2.1.113 (release `4.0.11`, commit `2e1d03e`), and running it against v2.1.114+ failed because several patch regexes didn't match the newer minified output.
+
+[**BenIsLegit/tweakcc-fixed**](https://github.com/BenIsLegit/tweakcc-fixed) was the stopgap — published as [`tweakcc-fixed`](https://www.npmjs.com/package/tweakcc-fixed) on npm. It bundles upstream PRs (#601 WASMagic import guard, #646 React Compiler output support, #655 Bun bytecode fallback + `clearBytecode`, #664 `\"` handling) plus additional fixes (scoped backslash-doubling, `verbose:X` destructure guard, adapted minified-shape regexes, and a batch of `userMessageDisplay` theme/layout fixes). It targets Claude Code through **v2.1.142**, so for v2.1.179 prefer upstream `tweakcc@latest` with the `--patches` approach above; `tweakcc-fixed` is still fine for its UI/theme patches on supported versions.
 
 ```bash
 npx tweakcc-fixed@latest            # interactive UI

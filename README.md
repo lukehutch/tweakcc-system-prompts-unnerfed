@@ -3,7 +3,7 @@
 Modified [Claude Code](https://docs.claude.com/en/docs/claude-code/overview) system prompts that remove the "be brief, be minimal" directives and replace them with instructions to be thorough. These are the actual files I use daily. Nothing here is cleaned up for public consumption — this is the live set, including all in-progress un-nerfs.
 
 > [!NOTE]
-> Currently aligned with **Claude Code v2.1.142**.
+> Currently aligned with **Claude Code v2.1.179**.
 
 |  |  |
 |---|---|
@@ -19,7 +19,20 @@ Modified [Claude Code](https://docs.claude.com/en/docs/claude-code/overview) sys
 
 You need [tweakcc](https://github.com/Piebald-AI/tweakcc) to patch these into your Claude Code binary.
 
-Grab the un-nerfed prompts as a release zip — no clone needed. From [Releases](https://github.com/BenIsLegit/tweakcc-system-prompts-unnerfed/releases), pick the tag whose Claude Code version matches yours (e.g. `v2.1.142-1` if you're on Claude Code v2.1.142) and download the `system-prompts-v<version>-<iteration>.zip` asset.
+### Quick install (recommended)
+
+[`install.sh`](install.sh) detects your Claude Code version, downloads the latest un-nerf rules straight from this repo, rebuilds that exact version's stock prompts, replays every un-nerf onto them, patches the binary, and then verifies the un-nerf actually landed:
+
+```bash
+# clone, then:
+./install.sh                 # ./install.sh --help for options (--prompts-only, --dry-run)
+```
+
+It applies **only the system-prompt patches** (`tweakcc --apply --patches …`), which sidesteps a real problem on recent Claude Code releases: a bare `tweakcc --apply` also runs tweakcc's *UI* patches, whose regexes lag new CC versions and abort the whole repack. One interactive step remains — tweakcc's extractor is a TUI that can't be driven headlessly — and the script walks you through it (then continues automatically).
+
+### Manual install
+
+Prefer to do it by hand, or want a pinned release? Grab the un-nerfed prompts as a release zip from [Releases](https://github.com/BenIsLegit/tweakcc-system-prompts-unnerfed/releases) (pick the tag matching your CC version), then:
 
 ```bash
 # 1. Wipe any existing tweakcc prompts (tweakcc won't overwrite edited files,
@@ -27,7 +40,7 @@ Grab the un-nerfed prompts as a release zip — no clone needed. From [Releases]
 rm -rf ~/.tweakcc/system-prompts          # Unix
 # Remove-Item -Recurse -Force "$HOME\.tweakcc\system-prompts"  # Windows
 
-# 2. Extract fresh stock prompts from your Claude Code binary
+# 2. Extract fresh stock prompts from your Claude Code binary (interactive TUI)
 npx tweakcc@latest
 
 # 3. Drop the un-nerfed prompts on top of the stock ones (overwriting stock).
@@ -35,8 +48,9 @@ npx tweakcc@latest
 unzip -o <PATH-TO-DOWNLOADED-ZIP> -d ~/.tweakcc/system-prompts/   # Unix
 # Expand-Archive -Force <PATH-TO-DOWNLOADED-ZIP> "$HOME\.tweakcc\system-prompts" # Windows
 
-# 4. Patch the binary
-npx tweakcc@latest --apply
+# 4. Patch the binary — apply ONLY the system-prompt patches by id, because a
+#    bare `--apply` may fail on recent CC versions (its UI patches lag upstream).
+npx tweakcc@latest --apply --patches "$(cd ~/.tweakcc/system-prompts && ls *.md | sed 's/\.md$//' | paste -sd,)"
 
 # 5. Restart any running Claude Code sessions
 ```
@@ -82,13 +96,16 @@ That's it. Every edit in this repo follows that rule. The goal isn't making Clau
 
 The stock version leads with the prohibition ("don't add"). The un-nerfed version leads with the requirement ("add ... at real boundaries"). Same safety caveat, opposite default.
 
-### Thinking frequency (`system-reminder-thinking-frequency-tuning.md`)
+### Implementation scope (`system-prompt-doing-tasks-no-additions.md`)
 
-**Stock:** "Tune your thinking frequency — on simpler user messages, respond or act directly without thinking unless further reasoning is necessary. [...] Avoid unnecessary thinking."
+**Stock:** "Don't add features, refactor, or introduce abstractions beyond what the task requires. A bug fix doesn't need surrounding cleanup [...] Three similar lines is better than a premature abstraction. No half-finished implementations either."
 
-**Un-nerfed:** "Think as deeply and as often as the work benefits from — extended reasoning produces better results, catches edge cases, and surfaces issues that shallow responses miss. There is no penalty for thorough thinking."
+**Un-nerfed:** "Implement the task completely and to a senior-engineer standard. Handle the edge cases, error paths, and failure modes the task implies, even if unstated [...] When a bug fix exposes adjacent breakage or you touch code that is plainly flawed, fix it and say what you did rather than working around it. Leave every file you touch clearer than you found it. And never ship a half-finished implementation."
 
-This is one of the highest-leverage changes. The stock prompt was actively telling Claude to think less. The un-nerfed version removes the "penalty for overthinking" framing entirely.
+The stock version caps the work at the literal ask, which produces shallow code. The un-nerfed version demands a complete, robust, senior-grade implementation while keeping the genuinely good "never half-finished" clause.
+
+> [!NOTE]
+> Earlier editions of this README highlighted a `system-reminder-thinking-frequency-tuning.md` flip ("Avoid unnecessary thinking" → "Think as deeply as the work benefits from"). Anthropic **removed that reminder entirely** somewhere between v2.1.142 and v2.1.179, so there is no longer a "think less" directive to flip — a rare case of upstream moving in the un-nerf direction on its own. The rule was retired during the v2.1.179 sync.
 
 ---
 
@@ -99,16 +116,18 @@ system-prompts-github/
 ├── README.md
 ├── MAINTENANCE.md
 ├── BACKGROUND.md
+├── install.sh                    # one-command installer; fetches the latest rules from git
 ├── scripts/
+│   ├── sync-version.mjs          # rebuilds stock prompts for a given CC version
 │   └── apply-unnerfs.py          # re-applies all un-nerfs after a CC version bump
-└── system-prompts/               # ~294 markdown files
-    ├── system-prompt-*.md        # core behavioral instructions, tone, task guidance (~65)
-    ├── system-reminder-*.md      # injected into user messages (~40)
-    ├── tool-description-*.md     # tool descriptions shown to the model (~81)
-    ├── tool-parameter-*.md       # parameter-level tool descriptions
-    ├── agent-prompt-*.md         # subagent system prompts (~37)
-    ├── data-*.md                 # reference data blobs (~40)
-    └── skill-*.md                # user-facing skill bodies (~30)
+└── system-prompts/               # 513 markdown files (Claude Code v2.1.179)
+    ├── system-prompt-*.md        # core behavioral instructions, tone, task guidance (135)
+    ├── tool-description-*.md     # tool descriptions shown to the model (130)
+    ├── system-reminder-*.md      # injected into user messages (73)
+    ├── agent-prompt-*.md         # subagent system prompts (61)
+    ├── skill-*.md                # user-facing skill bodies (58)
+    ├── data-*.md                 # reference data blobs (50)
+    └── tool-parameter-*.md       # parameter-level tool descriptions (5)
 ```
 
 Counts are approximate. The full inventory is whatever `ls system-prompts/` shows.
@@ -117,8 +136,8 @@ Counts are approximate. The full inventory is whatever `ls system-prompts/` show
 
 ## Compatibility
 
-- **Claude Code version:** Aligned with v2.1.142. Individual prompts carry `ccVersion:` frontmatter ranging from v2.0.14 to the current release. When Anthropic ships a new version, see [MAINTENANCE.md](MAINTENANCE.md) for the update workflow.
-- **Model family:** Tuned for current Claude models (Opus 4.7 / Sonnet 4.6 / Haiku 4.5). Older or smaller models might over-explain simple responses with these prompts active.
+- **Claude Code version:** Aligned with v2.1.179. Individual prompts carry `ccVersion:` frontmatter ranging from v2.0.14 to v2.1.179. When Anthropic ships a new version, see [MAINTENANCE.md](MAINTENANCE.md) for the update workflow.
+- **Model family:** Tuned for current Claude models (Opus 4.8 / Sonnet 4.6 / Haiku 4.5). Older or smaller models might over-explain simple responses with these prompts active.
 - **Over-verbosity:** This is the main failure mode to watch for. If Claude starts writing essays in response to "what time is it?", look at `system-prompt-communication-style.md` and `system-prompt-tone-concise-output-short.md` first.
 - **Token cost:** Thorough output uses more tokens. Plan accordingly.
 

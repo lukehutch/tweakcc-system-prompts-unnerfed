@@ -40,7 +40,7 @@ It also normalizes any accidental CRLF line endings back to LF.
 
 Located at [`scripts/sync-version.mjs`](./scripts/sync-version.mjs). Node.js ES module, pinned to `gray-matter@4.0.3` — the exact dependency tweakcc itself uses. Takes a Claude Code version and rebuilds every `.md` in `system-prompts/` from the matching `prompts-X.Y.Z.json` that tweakcc publishes alongside its own releases.
 
-The output is **byte-identical** to what tweakcc's extractor would produce against a freshly installed Claude Code binary at that version — because the script calls the same `matter.stringify()` with the same options as tweakcc's [`generateMarkdownFromPrompt`](https://github.com/Piebald-AI/tweakcc/blob/main/src/systemPromptSync.ts). Verified by diffing 294/294 files against a fresh `~/.tweakcc/system-prompts/` extraction on v2.1.142.
+The output is **byte-identical** to what tweakcc's extractor would produce against a freshly installed Claude Code binary at that version — because the script calls the same `matter.stringify()` with the same options as tweakcc's [`generateMarkdownFromPrompt`](https://github.com/Piebald-AI/tweakcc/blob/main/src/systemPromptSync.ts). Verified by diffing 294/294 files against a fresh `~/.tweakcc/system-prompts/` extraction on v2.1.142, and re-confirmed on the v2.1.179 sync by checking the reconstructed prompt text against the string literals in the actual installed binary (`tweakcc unpack` → grep): every distinctive line was present, the only "misses" being lines whose sole non-ASCII char (an emoji or `×`) is stored `\u`-escaped in the binary.
 
 ### One-time setup
 
@@ -86,7 +86,12 @@ If Anthropic just shipped a new Claude Code release and tweakcc hasn't published
 
 The fast path uses [`sync-version.mjs`](./scripts/sync-version.mjs) to skip the binary-extraction step entirely. Once tweakcc has published `prompts-X.Y.Z.json` for the new release (usually within hours of a Claude Code drop), you can rebuild the whole prompts tree without touching your local Claude Code install.
 
-> Use `npx tweakcc-fixed@latest` instead of `tweakcc` for the binary-patching steps below. See [BACKGROUND.md](BACKGROUND.md#which-fork-to-use) for why.
+> [!IMPORTANT]
+> **On recent Claude Code releases, patch system prompts by id.** As of the v2.1.179 sync, upstream `tweakcc@latest` (4.0.14) extracts and `unpack`s the binary correctly, but a bare `tweakcc --apply` also runs tweakcc's *UI* patches (e.g. `patches-applied-indication`), whose regexes lag the newer minified output and make the whole repack abort. Apply **only the system-prompt patches** instead:
+> ```bash
+> npx tweakcc@latest --apply --patches "$(cd ~/.tweakcc/system-prompts && ls *.md | sed 's/\.md$//' | paste -sd,)"
+> ```
+> [`install.sh`](./install.sh) does exactly this (with only the *changed* ids) and then verifies the result. `tweakcc-fixed@latest` remains an option but targets CC through v2.1.142; see [BACKGROUND.md](BACKGROUND.md#which-fork-to-use).
 
 ### Updating this repo
 
