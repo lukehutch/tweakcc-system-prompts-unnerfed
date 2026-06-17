@@ -172,8 +172,20 @@ if [ "$need_extract" = 1 ]; then
   info "tweakcc's extractor is an interactive TUI and can't be driven headlessly."
   info "When the tweakcc menu opens, choose 'Edit system prompts' (this extracts"
   info "them), then quit (q). This repo's prompts will be overwritten next."
+  # Move STALE extraction state aside first. An older-version ~/.tweakcc (old
+  # system-prompts, prompt-data-cache, hashes, and an old native-binary.backup)
+  # would otherwise shadow the new prompts or make `--restore` recover the wrong
+  # binary. Moving (not deleting) keeps it recoverable and avoids duplicating the
+  # ~240 MB backup. tweakcc regenerates everything cleanly for v${CC_VERSION}.
+  stale="${TWEAKCC_DIR}/.unnerf-stale-$(date +%s 2>/dev/null || echo prev)"
+  mkdir -p "$stale"
+  for f in system-prompts prompt-data-cache systemPromptOriginalHashes.json \
+           systemPromptAppliedHashes.json native-binary.backup \
+           native-claudejs-orig.js native-claudejs-patched.js; do
+    [ -e "${TWEAKCC_DIR}/${f}" ] && mv "${TWEAKCC_DIR}/${f}" "$stale/" || true
+  done
+  info "moved stale extraction state -> ${stale}"
   printf '%sPress Enter to launch tweakcc for extraction (Ctrl-C to abort)...%s' "$B" "$N"; read -r _
-  rm -rf "$PROMPTS_DIR"
   npx --yes "$TWEAKCC_PKG" || true
   [ -f "${TWEAKCC_DIR}/systemPromptOriginalHashes.json" ] \
     || die "extraction did not complete (no systemPromptOriginalHashes.json). Re-run after extracting in tweakcc."
