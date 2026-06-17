@@ -31,3 +31,8 @@ system-prompts/*.diff.html
 # Node deps for scripts/ (gray-matter is pinned in scripts/package.json;
 # the lockfile is checked in for reproducibility).
 scripts/node_modules/
+
+# Python bytecode cache from apply-unnerfs.py
+scripts/__pycache__/
+__pycache__/
+*.pyc
