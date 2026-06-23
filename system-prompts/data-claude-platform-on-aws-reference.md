@@ -4,11 +4,11 @@ description: >-
   Reference documentation for using the Claude Developer Platform through AWS
   infrastructure, including AnthropicAWS clients, required region and workspace
   configuration, SigV4 authentication, and short-term API keys
-ccVersion: 2.1.145
+ccVersion: 2.1.182
 -->
 # Claude Platform on AWS
 
-**Anthropic-operated** access to the Claude Developer Platform through AWS infrastructure — SigV4 authentication, AWS IAM access control, and AWS Marketplace billing. Because Anthropic operates it, **the API surface matches first-party with same-day parity**: Managed Agents, server-side tools, batches, Files, and every feature in this skill work the same way (**except self-hosted sandboxes** — \`config:{type:"self_hosted"}\` is not available here; use \`cloud\`). Model IDs are the bare first-party strings (\`{{OPUS_ID}}\`, \`{{SONNET_ID}}\`) — **no provider prefix**.
+**Anthropic-operated** access to the Claude Developer Platform through AWS infrastructure — SigV4 authentication, AWS IAM access control, and AWS Marketplace billing. Because Anthropic operates it, **the API surface matches first-party with same-day parity** — for per-feature exceptions, see \`shared/platform-availability.md\` (the single source of truth; do not rely on an inline exception list here). Model IDs are the bare first-party strings (\`{{OPUS_ID}}\`, \`{{SONNET_ID}}\`) — **no provider prefix**.
 
 > **Not the same as Amazon Bedrock.** Bedrock is partner-operated (AWS runs the service; release schedules vary, feature subset, \`anthropic.\`-prefixed model IDs). Claude Platform on AWS and Bedrock coexist; pick by whether you need AWS-native IAM/billing with full Anthropic API parity (this page) vs. Bedrock's own ecosystem.
 

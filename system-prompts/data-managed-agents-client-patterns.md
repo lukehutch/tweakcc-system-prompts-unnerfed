@@ -4,13 +4,13 @@ description: >-
   Reference guide of common client-side patterns for driving Managed Agent
   sessions, including stream reconnection, idle-break gating, tool
   confirmations, interrupts, and custom tools
-ccVersion: 2.1.172
+ccVersion: 2.1.182
 -->
 # Managed Agents — Common Client Patterns
 
 Patterns you'll write on the client side when driving a Managed Agent session, grounded in working SDK examples.
 
-Code samples are TypeScript — Python and cURL follow the same shape; see \`python/managed-agents/README.md\` and \`curl/managed-agents.md\` for equivalents.
+Code samples are TypeScript — other languages follow the same shape; see \`{lang}/managed-agents/README.md\` (cURL and C#: \`curl/managed-agents.md\`) for equivalents.
 
 ---
 

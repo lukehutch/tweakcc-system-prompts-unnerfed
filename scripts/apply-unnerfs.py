@@ -808,6 +808,59 @@ RULES: dict[str, list[Rule]] = {
             description='workflow: keep opt-in gate, but surface beneficial parallelism proactively',
         ),
     ],
+
+    # -------------------------------------------------------------------------
+    # Consistency flips found by the v2.1.185 full-prompt audit. Each mirrors an
+    # already-applied rule whose sibling instance was previously missed, or
+    # closes a process-brevity cap on a human-facing report. All are bucket-3
+    # (process brevity): they suppress substantive status/explanation to a human.
+    # -------------------------------------------------------------------------
+    "agent-prompt-code-review-part-9-fix-application.md": [
+        Rule(
+            # Same sentence as agent-prompt-simplify-slash-command.md (already
+            # un-nerfed). --fix has just mutated the user's working tree; the
+            # diff shows WHAT changed but not WHY a finding was skipped (false
+            # positive vs behavior-changing vs out-of-scope) — the exact rationale
+            # the user needs to review applied edits. Don't cap it at "brief".
+            stock='Finish with a brief summary of what was fixed\nand what was skipped.',
+            unnerf='Finish with a thorough account of what was fixed and why, and what was skipped with the specific reason for each skip.',
+            description='code-review --fix report: thorough fix/skip account with reasons (mirrors simplify-slash-command)',
+        ),
+    ],
+    "system-prompt-troubleshooting-confirmation-policy.md": [
+        Rule(
+            # Safety confirmation gate. A fuller explanation strictly HELPS the
+            # user's decision to approve a destructive command — flipping "briefly"
+            # strengthens the gate rather than weakening it. Mirrors the
+            # learning-mode-insights "brief"->"thorough" educational flip.
+            stock='briefly explain what the fix will do, then ask me to confirm',
+            unnerf='clearly explain what the fix will do and why it is the right fix, then ask me to confirm',
+            description='troubleshooting confirm gate: explain the fix clearly + why (informs the safety decision)',
+        ),
+    ],
+    "system-prompt-coordinator-mode-orchestration.md": [
+        Rule(
+            # The coordinator's stated job is to synthesize results and communicate
+            # with the user; a one-line launch note undercuts that. Parallel to the
+            # communication-style flips ("short updates"->"substantive updates").
+            # The "Never fabricate results / results arrive separately" clause that
+            # follows this sentence is left untouched.
+            stock='briefly tell the user what you launched and end your response.',
+            unnerf='tell the user what you launched and why — what each worker is investigating and what you expect to learn back — then end your response.',
+            description='coordinator launch note: explain what/why per worker instead of a brief note',
+        ),
+    ],
+    "system-prompt-autonomous-loop-persistence-guidance-CLAUDE_CODE_LOOP_PERSISTENT.md": [
+        Rule(
+            # Sibling of system-prompt-autonomous-loop-check.md (already un-nerfed):
+            # a quiet "nothing to do" tick should report what was actually checked,
+            # not collapse to one sentence. "keep the loop alive" (the persistence
+            # behavior this file exists to enforce) is preserved.
+            stock='say so in one sentence and keep the loop alive.',
+            unnerf='report what you checked (PRs inspected, CI status, threads reviewed, branches compared) and confirm nothing needed action, then keep the loop alive.',
+            description='loop persistence quiet-tick: substantive status report, preserve persistence (mirrors autonomous-loop-check)',
+        ),
+    ],
 }
 
 

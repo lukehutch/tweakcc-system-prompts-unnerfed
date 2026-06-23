@@ -4,7 +4,7 @@ description: >-
   Step-by-step instructions for migrating existing code to newer Claude models,
   covering breaking changes, deprecated parameters, per-SDK syntax,
   prompt-behavior shifts, and migration checklists
-ccVersion: 2.1.176
+ccVersion: 2.1.182
 -->
 # Model Migration Guide
 
@@ -510,7 +510,7 @@ If the code uses the \`AnthropicBedrockMantle\` client (Python \`anthropic[bedro
 
 When migrating a Bedrock file, apply the same rename-table row as first-party, then keep/add the \`anthropic.\` prefix. Do **not** generate a first-party \`claude-*\` ID for a Bedrock client — it will 400.
 
-**Skip for Bedrock:** the \`code_execution_*\` tool-version checklist item and the **Task Budgets** section — both are first-party-only features (Bedrock does not support server-side Anthropic tools or the \`task-budgets-2026-03-13\` beta). Everything else in this guide — \`effort\`, adaptive/extended thinking, \`output_config.format\`, \`thinking.display\`, fine-grained tool streaming, token counting — is available on Bedrock.
+**Skip for Bedrock:** the \`code_execution_*\` tool-version checklist item and the **Task Budgets** section — neither is available on Bedrock (see \`shared/platform-availability.md\` for the per-feature table). Everything else in this guide — \`effort\`, adaptive/extended thinking, \`output_config.format\`, \`thinking.display\`, fine-grained tool streaming, token counting — is available on Bedrock.
 
 > **Out of scope:** the legacy Amazon Bedrock integration (\`InvokeModel\` / \`Converse\` APIs with ARN-versioned IDs like \`anthropic.claude-3-5-sonnet-20241022-v2:0\`) uses a different request shape and model-ID format. This guide does not cover it; WebFetch the Bedrock page in \`shared/live-sources.md\` if the user is migrating between the two Bedrock integrations.
 
@@ -830,7 +830,7 @@ messages=[
 ]
 \`\`\`
 
-Phrase these as **context, not commands**. State the fact and let Claude act on it; avoid override-style language ("ignore what the user said", "regardless of the user's request", "disregard the previous instruction"). Claude is trained to protect users from instructions that appear to work against them, and that protection applies to the system role too. This is a beta (\`anthropic-beta: mid-conversation-system-2026-04-07\`) and is available from Opus 4.7 onward, not 4.8-exclusive. For cache-placement details and the older-model \`<system-reminder>\` fallback, see \`shared/prompt-caching.md\` and \`shared/agent-design.md\`.
+Phrase these as **context, not commands**. State the fact and let Claude act on it; avoid override-style language ("ignore what the user said", "regardless of the user's request", "disregard the previous instruction"). Claude is trained to protect users from instructions that appear to work against them, and that protection applies to the system role too. No beta header is required; available on {{OPUS_NAME}}. For cache-placement details and the older-model \`<system-reminder>\` fallback, see \`shared/prompt-caching.md\` and \`shared/agent-design.md\`.
 
 ### Capability improvements
 
@@ -890,7 +890,7 @@ For a caller **already on Opus 4.7**, only the first item is required; everythin
 - [ ] **[TUNE]** Writing voice: re-evaluate style prompts added to counter 4.7's directness — 4.8 is warmer and less hedged by default; re-baseline before keeping them
 - [ ] **[TUNE]** Code-review harnesses: keep the report-everything-filter-downstream pattern (4.8 follows "only high-severity" / "be conservative" filters literally, which can depress measured recall)
 - [ ] **[TUNE]** Thinking-disabled paths: add a final-answer-only instruction if reasoning leaks into the visible response
-- [ ] **[TUNE]** Consider mid-session system messages (\`role:"system"\` in \`messages\`, beta \`mid-conversation-system-2026-04-07\`) for context the app learns mid-session, instead of rebuilding the top-level system prompt and invalidating the cache
+- [ ] **[TUNE]** Consider mid-session system messages (\`role:"system"\` in \`messages\`; no beta header) for context the app learns mid-session, instead of rebuilding the top-level system prompt and invalidating the cache
 
 ---
 

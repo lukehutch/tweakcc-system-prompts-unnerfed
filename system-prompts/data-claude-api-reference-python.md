@@ -3,7 +3,7 @@ name: 'Data: Claude API reference — Python'
 description: >-
   Python SDK reference including installation, client initialization, basic
   requests, thinking, and multi-turn conversation
-ccVersion: 2.1.176
+ccVersion: 2.1.182
 -->
 # Claude API — Python
 
@@ -123,9 +123,9 @@ response = client.messages.create(
 )
 \`\`\`
 
-### Mid-conversation system messages (beta, model-gated)
+### Mid-conversation system messages (model-gated)
 
-For operator instructions that arrive mid-conversation (mode switches, injected state), append \`{"role": "system", ...}\` to \`messages\` instead of editing top-level \`system\` — this preserves the cached prefix and carries operator authority. Must follow a user message; cannot be \`messages[0]\`. Unsupported models return a 400 (\`role 'system' is not supported on this model\`). See \`shared/prompt-caching.md\` for when to use this vs. top-level \`system\`.
+For operator instructions that arrive mid-conversation (mode switches, injected state), append \`{"role": "system", ...}\` to \`messages\` instead of editing top-level \`system\` — this preserves the cached prefix and carries operator authority. Must follow a user message (or an \`assistant\` message ending in server-tool use), and must be either the last entry in \`messages\` or be followed by an \`assistant\` turn; cannot be \`messages[0]\`. Unsupported models return a 400 (\`role 'system' is not supported on this model\`). See \`shared/prompt-caching.md\` for when to use this vs. top-level \`system\`.
 
 \`\`\`python
 response = client.messages.create(
@@ -136,8 +136,7 @@ response = client.messages.create(
         {"role": "user", "content": user_message},
         {"role": "system", "content": "Terse mode enabled — keep responses under 40 words."},
     ],
-    extra_headers={"anthropic-beta": "mid-conversation-system-2026-04-07"},
-)
+)  # No beta header needed — use regular client.messages.create
 \`\`\`
 
 ---
@@ -382,7 +381,7 @@ response2 = conversation.send("What's my name?")  # Claude remembers "Alice"
 
 - Consecutive same-role messages are allowed — the API combines them into a single turn
 - First message must be \`user\`
-- \`role: "system"\` messages are allowed mid-conversation under the \`mid-conversation-system-2026-04-07\` beta on supporting models — see § Mid-conversation system messages above
+- \`role: "system"\` messages are allowed mid-conversation on supporting models (no beta header needed) — see § Mid-conversation system messages above
 
 ---
 

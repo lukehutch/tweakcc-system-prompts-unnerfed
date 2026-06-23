@@ -3,14 +3,20 @@
 Modified [Claude Code](https://docs.claude.com/en/docs/claude-code/overview) system prompts that remove the "be brief, be minimal" directives and replace them with instructions to be thorough. These are the actual files I use daily. Nothing here is cleaned up for public consumption — this is the live set, including all in-progress un-nerfs.
 
 > [!NOTE]
-> Currently aligned with **Claude Code v2.1.181**.
+> Currently aligned with **Claude Code v2.1.185** (the latest version tweakcc has
+> published prompt data for). Verified against the installed **v2.1.186** binary:
+> 520/525 prompts are byte-identical; the one behavioral change in 2.1.186
+> (`/review-pr` reworked into `/review`) will sync automatically once tweakcc
+> publishes `prompts-2.1.186.json`. See [UNNERF-GUIDE.md](UNNERF-GUIDE.md) for how
+> upgrades work.
 
 |  |  |
 |---|---|
 | [Install](#install) | Get these running on your machine |
 | [The thesis](#the-un-nerf-thesis) | Why these edits exist |
 | [Examples](#beforeafter-examples) | What the changes look like |
-| [Maintenance](MAINTENANCE.md) | Keeping up with new Claude Code releases |
+| [Un-nerf guide](UNNERF-GUIDE.md) | **Objectives + the full upgrade playbook** |
+| [Maintenance](MAINTENANCE.md) | Script flags and the update workflow |
 | [Background](BACKGROUND.md) | How tweakcc works, where these edits came from |
 
 ---
@@ -119,29 +125,35 @@ The stock version caps the work at the literal ask, which produces shallow code.
 ```
 system-prompts-github/
 ├── README.md
+├── UNNERF-GUIDE.md               # objectives + the full upgrade playbook
 ├── MAINTENANCE.md
 ├── BACKGROUND.md
 ├── install.sh                    # one-command installer; fetches the latest rules from git
+├── system-prompt-checksums.json  # MD5 of every STOCK prompt; drives change detection
 ├── scripts/
-│   ├── sync-version.mjs          # rebuilds stock prompts for a given CC version
+│   ├── sync-version.mjs          # rebuilds stock prompts + auto-diffs the checksum manifest
+│   ├── prompt-checksums.mjs      # MD5 manifest tool (used by sync-version; standalone CLI too)
 │   └── apply-unnerfs.py          # re-applies all un-nerfs after a CC version bump
-└── system-prompts/               # 512 markdown files (Claude Code v2.1.181)
+└── system-prompts/               # 525 markdown files (Claude Code v2.1.185)
     ├── system-prompt-*.md        # core behavioral instructions, tone, task guidance (135)
     ├── tool-description-*.md     # tool descriptions shown to the model (130)
     ├── system-reminder-*.md      # injected into user messages (77)
+    ├── data-*.md                 # reference data blobs (61)
     ├── agent-prompt-*.md         # subagent system prompts (61)
-    ├── skill-*.md                # user-facing skill bodies (54)
-    ├── data-*.md                 # reference data blobs (49)
+    ├── skill-*.md                # user-facing skill bodies (55)
     └── tool-parameter-*.md       # parameter-level tool descriptions (5)
 ```
 
 Counts are approximate. The full inventory is whatever `ls system-prompts/` shows.
+`system-prompt-checksums.json` holds the MD5 of each **stock** prompt (not the
+un-nerfed files) so that `sync-version.mjs` can report exactly what Anthropic
+changed/added/removed on the next version bump — see [UNNERF-GUIDE.md](UNNERF-GUIDE.md).
 
 ---
 
 ## Compatibility
 
-- **Claude Code version:** Aligned with v2.1.181. Individual prompts carry `ccVersion:` frontmatter ranging from v2.0.14 to v2.1.181. When Anthropic ships a new version, see [MAINTENANCE.md](MAINTENANCE.md) for the update workflow.
+- **Claude Code version:** Aligned with v2.1.185. Individual prompts carry `ccVersion:` frontmatter ranging from v2.0.14 to v2.1.185. When Anthropic ships a new version, see [UNNERF-GUIDE.md](UNNERF-GUIDE.md) for the full upgrade playbook (and [MAINTENANCE.md](MAINTENANCE.md) for script flags).
 - **Model family:** Tuned for current Claude models (Opus 4.8 / Sonnet 4.6 / Haiku 4.5). Older or smaller models might over-explain simple responses with these prompts active.
 - **Over-verbosity:** This is the main failure mode to watch for. If Claude starts writing essays in response to "what time is it?", look at `system-prompt-communication-style.md` and `system-prompt-tone-concise-output-short.md` first.
 - **Token cost:** Thorough output uses more tokens. Plan accordingly.

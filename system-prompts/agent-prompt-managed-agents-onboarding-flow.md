@@ -4,7 +4,7 @@ description: >-
   Interactive interview script that helps users configure a Managed Agent by
   describing the task, proposing tools and resources, setting up the environment
   and session, testing access, and emitting integration code
-ccVersion: 2.1.172
+ccVersion: 2.1.182
 -->
 # Managed Agents — Onboarding Flow
 
@@ -87,4 +87,4 @@ SDK fallback if the user asks — and **required on Claude Platform on AWS**, wh
 
 > ⚠️ **Never emit `agents.create()` and `sessions.create()` in the same unguarded block** — that teaches creating a new agent per run, the #1 anti-pattern. Single-script requests: wrap creation in `if not os.getenv(\"AGENT_ID\"):`.
 
-Pull exact syntax from `python/managed-agents/README.md`, `typescript/managed-agents/README.md`, or `curl/managed-agents.md`. Don't invent field names.
+Pull exact syntax from `{lang}/managed-agents/README.md` for your detected language (cURL and C#: use `curl/managed-agents.md` as the wire-level reference). Don't invent field names.

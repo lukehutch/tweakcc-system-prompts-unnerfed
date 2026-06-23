@@ -2,6 +2,12 @@
 
 How to keep these un-nerfed prompts current when Anthropic ships a new Claude Code release.
 
+> [!IMPORTANT]
+> **The authoritative upgrade playbook is now [UNNERF-GUIDE.md](UNNERF-GUIDE.md)** —
+> it covers the project's objectives, the keep/flip decision procedure, the MD5
+> change-detection manifest, the review method, rule updates, and binary
+> verification, end to end. This file is the per-script flag reference behind it.
+
 ## Quick version
 
 Every Claude Code update can change the wording of any system prompt. When that happens, run [`sync-version.mjs`](./scripts/sync-version.mjs) to rebuild `system-prompts/` from tweakcc's published JSON for the new version, then run [`apply-unnerfs.py`](./scripts/apply-unnerfs.py) to replay the un-nerfs against the new text. Together the two scripts handle most of the refresh automatically. You only step in when upstream changed the exact wording that a rule targets.
@@ -91,7 +97,7 @@ The fast path uses [`sync-version.mjs`](./scripts/sync-version.mjs) to skip the 
 
 ### Updating this repo
 
-1. **Sync the stock prompts.** `node scripts/sync-version.mjs X.Y.Z`. This wipes `./system-prompts/` and rewrites every `.md` from tweakcc's `prompts-X.Y.Z.json`. The script tries your local tweakcc clone first (default `G:/Cathedral/repos_external/tweakcc`), falling back to GitHub. Don't commit yet — run `git diff` first to see exactly what Anthropic changed upstream.
+1. **Sync the stock prompts.** `node scripts/sync-version.mjs X.Y.Z`. This wipes `./system-prompts/` and rewrites every `.md` from tweakcc's `prompts-X.Y.Z.json`. The script tries your local tweakcc clone first (default `G:/Cathedral/repos_external/tweakcc`), falling back to GitHub. **It also diffs the freshly-built stock against `system-prompt-checksums.json` (the MD5 manifest from the previous sync) and prints exactly which prompts Anthropic CHANGED / ADDED / REMOVED, then rewrites the manifest.** That printed diff — not `git diff` on the un-nerfed tree — is your clean "what changed upstream" worklist (`git diff` mixes upstream changes with your un-nerf reverts; the manifest doesn't).
 
 2. **Run the re-apply script.** `python scripts/apply-unnerfs.py`. Read the report.
 
@@ -99,7 +105,7 @@ The fast path uses [`sync-version.mjs`](./scripts/sync-version.mjs) to skip the 
 
 4. **Re-run until clean.** Keep running `apply-unnerfs.py` until the report shows only APPLIED, SKIPPED, and NORMALIZED. No FAILs.
 
-5. **Check for new prompts.** `git status` will show untracked `.md` files for anything Anthropic added. Read each one and decide if it introduces a brevity nerf worth flipping. Some new prompts (structured JSON generators with word caps, for example) should stay stock. Use the [un-nerf thesis](README.md#the-un-nerf-thesis) to decide.
+5. **Review CHANGED and ADDED prompts.** Work from the manifest diff printed in step 1 (it's the clean list). For each ADDED prompt and each CHANGED prompt without a rule, read it and decide if it introduces a brevity nerf worth flipping — most new `data-*` blobs and structured JSON generators with word caps should stay stock. Use the keep/flip decision procedure in [UNNERF-GUIDE.md](UNNERF-GUIDE.md#part-1--the-objective). For a periodic full sweep (catching nerfs missed in earlier versions), use the grep-triage in the guide's Part 5.
 
 6. **Commit.** The updated `.md` files and any `apply-unnerfs.py` rule changes together, while the diff is still small and the context is fresh.
 

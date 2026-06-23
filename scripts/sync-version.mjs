@@ -45,6 +45,16 @@ import { parseArgs } from "node:util";
 
 import matter from "gray-matter";
 
+import {
+  manifestFromContents,
+  diffManifests,
+  loadManifest,
+  writeManifest,
+  formatDiffReport,
+  hasDrift,
+  DEFAULT_MANIFEST,
+} from "./prompt-checksums.mjs";
+
 // ---------------------------------------------------------------------------
 // Configuration
 // ---------------------------------------------------------------------------
@@ -193,10 +203,19 @@ options:
                        (default: ${DEFAULT_TWEAKCC_DIR})
   --target PATH        Output directory
                        (default: ${DEFAULT_TARGET})
+  --manifest PATH      Stock-prompt MD5 manifest to diff against and update
+                       (default: ${DEFAULT_MANIFEST})
   --download           Skip the local clone check; always fetch from GitHub.
-  --dry-run            Don't write anything; report what would change.
+  --dry-run            Don't write anything; report what would change
+                       (including the stock-checksum diff).
   --no-clear           Don't delete existing files in --target before writing.
+  --no-manifest        Don't read or write the stock-checksum manifest.
   -h, --help           Show this help message and exit.
+
+On every run this diffs the freshly-generated STOCK prompts against the MD5
+manifest from the previous sync and reports which prompts Anthropic changed,
+added, or removed — then rewrites the manifest for the new version. That diff is
+the authoritative "what to re-review" list for the un-nerf rules.
 
 After running, run scripts/apply-unnerfs.py to re-apply un-nerfs.`);
 }
@@ -234,9 +253,11 @@ async function main(argv) {
       options: {
         "tweakcc-dir": { type: "string", default: DEFAULT_TWEAKCC_DIR },
         target: { type: "string", default: DEFAULT_TARGET },
+        manifest: { type: "string", default: DEFAULT_MANIFEST },
         download: { type: "boolean", default: false },
         "dry-run": { type: "boolean", default: false },
         "no-clear": { type: "boolean", default: false },
+        "no-manifest": { type: "boolean", default: false },
         help: { type: "boolean", short: "h", default: false },
       },
     });
@@ -272,28 +293,49 @@ async function main(argv) {
     throw new SystemExit("error: JSON file has no 'prompts' array");
   }
 
-  if (parsed.values["dry-run"]) {
-    console.error(`[dry-run] would clear and rewrite ${target}`);
-    let existing = [];
-    try {
-      const entries = await fs.readdir(target);
-      existing = entries.filter((n) => n.endsWith(".md")).sort();
-    } catch (err) {
-      if (err.code !== "ENOENT") throw err;
-    }
-    const incoming = prompts.map((p) => `${p.id}.md`).sort();
-    const existingSet = new Set(existing);
-    const incomingSet = new Set(incoming);
-    const added = incoming.filter((n) => !existingSet.has(n));
-    const removed = existing.filter((n) => !incomingSet.has(n));
-    const kept = existing.filter((n) => incomingSet.has(n));
-    console.error(`  new files: ${added.length}`);
-    for (const f of added.slice(0, 50)) console.error(`    + ${f}`);
-    console.error(`  removed files: ${removed.length}`);
-    for (const f of removed.slice(0, 50)) console.error(`    - ${f}`);
-    console.error(`  updated/rewritten files: ${kept.length}`);
+  const manifestPath = path.resolve(parsed.values.manifest);
+  const useManifest = !parsed.values["no-manifest"];
+  const dryRun = parsed.values["dry-run"];
+
+  // Generate every stock .md body once. This is the byte-exact STOCK content
+  // (un-nerfs run later, in apply-unnerfs.py), so it's also what we fingerprint.
+  const entries = prompts.map((p) => ({
+    id: p.id,
+    content: generateMarkdownFromPrompt(p),
+  }));
+
+  // Stock-checksum diff: the authoritative "what did Anthropic change" report.
+  // Runs on every invocation (dry-run included), comparing the freshly built
+  // stock against the manifest written by the previous sync.
+  if (useManifest) {
+    const newManifest = manifestFromContents(entries);
+    const prior = await loadManifest(manifestPath);
+    const diff = diffManifests(prior?.prompts, newManifest);
     console.error(
-      `[dry-run] would write ${prompts.length} files total for v${version}`,
+      formatDiffReport(diff, {
+        prevVersion: prior?.ccVersion ?? null,
+        newVersion: version,
+      }),
+    );
+    if (prior && hasDrift(diff)) {
+      console.error(
+        "\n-> Re-review the CHANGED prompts' un-nerf rules and the ADDED " +
+          "prompts for new brevity nerfs (see UNNERF-GUIDE.md). " +
+          "Removed prompts: retire their rules.",
+      );
+    }
+    if (!dryRun) {
+      await writeManifest(manifestPath, { ccVersion: version, prompts: newManifest });
+      console.error(`\nupdated stock-checksum manifest: ${manifestPath} (v${version})`);
+    } else {
+      console.error(`\n[dry-run] manifest ${manifestPath} would be rewritten for v${version}`);
+    }
+    console.error("");
+  }
+
+  if (dryRun) {
+    console.error(
+      `[dry-run] would write ${entries.length} stock files to ${target} for v${version}`,
     );
     return 0;
   }
@@ -302,8 +344,8 @@ async function main(argv) {
   // and any non-.md siblings alone.
   if (!parsed.values["no-clear"]) {
     try {
-      const entries = await fs.readdir(target);
-      for (const name of entries) {
+      const existing = await fs.readdir(target);
+      for (const name of existing) {
         if (name.endsWith(".md")) {
           await fs.unlink(path.join(target, name));
         }
@@ -317,12 +359,11 @@ async function main(argv) {
   }
 
   let written = 0;
-  for (const prompt of prompts) {
-    const md = generateMarkdownFromPrompt(prompt);
-    const out = path.join(target, `${prompt.id}.md`);
+  for (const { id, content } of entries) {
+    const out = path.join(target, `${id}.md`);
     // Write as bytes (no encoding transform) to keep LF line endings on every
     // platform — matches tweakcc's output on Windows.
-    await fs.writeFile(out, md, { encoding: "utf-8" });
+    await fs.writeFile(out, content, { encoding: "utf-8" });
     written++;
   }
 

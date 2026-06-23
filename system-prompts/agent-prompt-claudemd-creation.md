@@ -3,7 +3,7 @@ name: 'Agent Prompt: CLAUDE.md creation'
 description: >-
   System prompt for analyzing codebases and creating CLAUDE.md documentation
   files
-ccVersion: 2.0.14
+ccVersion: 2.1.185
 -->
 Please analyze this codebase and create a CLAUDE.md file, which will be given to future instances of Claude Code to operate in this repository.
 
