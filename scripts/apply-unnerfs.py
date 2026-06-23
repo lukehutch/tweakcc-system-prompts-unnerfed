@@ -861,6 +861,18 @@ RULES: dict[str, list[Rule]] = {
             description='loop persistence quiet-tick: substantive status report, preserve persistence (mirrors autonomous-loop-check)',
         ),
     ],
+    "system-reminder-async-agent-launched.md": [
+        Rule(
+            # Same sentence as the now-un-nerfed coordinator-mode-orchestration rule.
+            # The reminder's purpose is anti-duplication ("don't redo the agent's
+            # work"); a fuller "what + why" launch note doesn't harm that, and the
+            # "end your response" stop is preserved. Flipped for cross-prompt
+            # consistency (the exhaustive sibling-duplicate audit surfaced it).
+            stock='briefly tell the user what you launched and end your response.',
+            unnerf='tell the user what you launched and why you launched it, then end your response.',
+            description='async-agent-launched note: explain what/why launched, keep the anti-duplication stop (mirrors coordinator-mode-orchestration)',
+        ),
+    ],
 }
 
 

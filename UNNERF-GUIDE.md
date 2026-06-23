@@ -280,8 +280,13 @@ FAILs).
 | A prompt was **renamed** | **Retarget**: move the rule to the new filename key (e.g. `skill-simplify.md` → `agent-prompt-simplify-slash-command.md`). |
 
 Confirm the same flip isn't needed in a **sibling** prompt — Claude Code often
-duplicates a sentence across related prompts, and rules are per-file. (This
-session found four such siblings; see Part 9.)
+duplicates a sentence across related prompts, and rules are per-file. Don't
+eyeball this — run the **exhaustive sibling audit**: import `RULES`, and for each
+rule grep its `stock` across every stock `.md`; any match in a file that *isn't*
+the rule's own key is an un-ruled sibling to flip (unless the match is
+example/reference content — e.g. a sample prompt quoted inside a guide, which
+stays). This session's audit closed one such gap (`async-agent-launched`) and
+confirmed one intentional keep (`skill-model-migration-guide`); see Part 9.
 
 ---
 
@@ -409,9 +414,16 @@ This is the sync that produced the current state, as a concrete template.
     you launched".
   - `system-prompt-autonomous-loop-persistence-…` — "say so in one sentence"
     (sibling of the ruled `autonomous-loop-check`).
-  Result: **82 rules**, `--check` clean. (`system-reminder-async-agent-launched`
-  has the same "briefly tell" sentence but was **kept** — there it's a functional
-  "stop, don't duplicate" instruction, not a communication cap. Context decides.)
+  Then the **exhaustive sibling audit** (Part 6) — every rule's `stock` grepped
+  against all 525 prompts — surfaced a 5th consistency flip:
+  `system-reminder-async-agent-launched` carries the *same* "briefly tell the user
+  what you launched" sentence as the coordinator rule (flipped, with the
+  anti-duplication "end your response" stop preserved). Result: **83 rules**,
+  `--check` clean. The audit's one remaining cross-file duplicate is an
+  intentional **keep**: that "give a recommendation, not an exhaustive survey"
+  matches `skill-model-migration-guide`, but there it's inside a *sample prompt*
+  quoted for users migrating their own apps (example content, not a directive to
+  Claude — flipping it would corrupt the guide). Context decides.
 - **2.1.186 binary check** (`unpack` + fingerprint): **520/525** prompts byte-present
   in the installed 2.1.186 binary; **1 changed** —
   `agent-prompt-review-pr-slash-command` was reworked (the `/review-pr` command
