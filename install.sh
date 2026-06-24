@@ -195,8 +195,15 @@ node "${REPO}/scripts/sync-version.mjs" "$CC_VERSION" --download >/dev/null \
   || die "sync-version.mjs could not fetch prompts for v${CC_VERSION} (tweakcc may not have published them yet)"
 STOCK_SNAP="${WORKDIR}/stock"
 cp -a "${REPO}/system-prompts" "$STOCK_SNAP"
-python3 "${REPO}/scripts/apply-unnerfs.py" --dir "${REPO}/system-prompts" >/dev/null \
-  || die "apply-unnerfs.py reported failures — the rule set may need updating for v${CC_VERSION}"
+APPLY_LOG="${WORKDIR}/apply-unnerfs.log"
+if ! python3 "${REPO}/scripts/apply-unnerfs.py" --dir "${REPO}/system-prompts" >"$APPLY_LOG" 2>&1; then
+  # Surface WHAT failed — the [FAIL]/[MISSING] blocks and the summary — instead of
+  # swallowing them. WORKDIR is removed on exit, so print the detail inline.
+  warn "apply-unnerfs.py reported failures for v${CC_VERSION} (rules: ${UNNERF_REPO} @ ${UNNERF_REF}):"
+  grep -B1 -A2 -E '\[FAIL|\[MISSING|\[ERROR' "$APPLY_LOG" | sed 's/^/      /' >&2 || true
+  grep -E 'Rules (applied|skipped|FAILED)|Missing files' "$APPLY_LOG" | sed 's/^/      /' >&2 || true
+  die "apply-unnerfs.py reported failures (details above). MISSING = a rule targets a prompt that no longer exists in v${CC_VERSION} (Anthropic renamed/removed it); FAIL = a rule's stock text drifted. Retire/retarget those rules in the un-nerf repo, or point UNNERF_REPO/UNNERF_REF at a rule set that matches v${CC_VERSION}."
+fi
 
 # Compute the list of un-nerfed prompt IDs (filename stems that changed vs stock).
 UNNERFED_IDS=""
