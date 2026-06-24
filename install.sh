@@ -121,12 +121,21 @@ build_tweakcc() {
   git clone --quiet --depth 1 --branch "$TWEAKCC_REF" "$TWEAKCC_GIT" "$dir" 2>/dev/null \
     || git clone --quiet --depth 1 "$TWEAKCC_GIT" "$dir" \
     || die "could not clone tweakcc from $TWEAKCC_GIT @ $TWEAKCC_REF"
+  # Corepack-managed pnpm (including the `corepack enable pnpm` fallback below)
+  # asks "Corepack is about to download <pnpm>... [Y/n]" the first time it has to
+  # fetch a pnpm build. That prompt is written to stderr, which the pnpm commands
+  # below send to /dev/null, so it stays invisible while still blocking on stdin —
+  # hanging the build forever with no output. Tell corepack to fetch without
+  # prompting so the build runs unattended.
+  export COREPACK_ENABLE_DOWNLOAD_PROMPT=0
   if ! command -v pnpm >/dev/null 2>&1; then
     corepack enable pnpm >/dev/null 2>&1 || npm i -g pnpm >/dev/null 2>&1 \
       || die "tweakcc builds with pnpm; install pnpm (npm i -g pnpm) and retry"
   fi
+  # </dev/null: belt-and-suspenders so that if any pnpm step still tries to read
+  # from the terminal it fails fast instead of hanging behind the redirects above.
   ( cd "$dir" && pnpm install --silent --prefer-offline >/dev/null 2>&1 \
-      && pnpm build:dev >/dev/null 2>&1 ) \
+      && pnpm build:dev >/dev/null 2>&1 ) </dev/null \
     || die "tweakcc build failed under $dir — run 'pnpm install && pnpm build:dev' there to see why"
   [ -f "${dir}/dist/index.mjs" ] || die "tweakcc build produced no dist/index.mjs"
   TWEAKCC="node ${dir}/dist/index.mjs"
