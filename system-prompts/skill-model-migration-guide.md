@@ -4,7 +4,7 @@ description: >-
   Step-by-step instructions for migrating existing code to newer Claude models,
   covering breaking changes, deprecated parameters, per-SDK syntax,
   prompt-behavior shifts, and migration checklists
-ccVersion: 2.1.182
+ccVersion: 2.1.186
 -->
 # Model Migration Guide
 
@@ -411,7 +411,7 @@ Legacy tool versions are not supported on 4+. **Both the \`type\` and the \`name
 | Old                                               | New                                                     |
 | ------------------------------------------------- | ------------------------------------------------------- |
 | \`text_editor_20250124\` + \`str_replace_editor\`     | \`text_editor_20250728\` + \`str_replace_based_edit_tool\`  |
-| \`code_execution_*\` (earlier versions)             | \`code_execution_20250825\`                               |
+| \`code_execution_*\` (earlier versions)             | \`code_execution_20260521\`                               |
 | \`undo_edit\` command                               | *(no longer supported — delete call sites)*             |
 
 \`\`\`python
@@ -541,7 +541,7 @@ For each file that calls \`messages.create()\` / equivalent SDK method:
 - [ ] **[BLOCKS]** Remove either \`temperature\` or \`top_p\` (passing both 400s on Claude 4+)
 - [ ] **[BLOCKS]** Update text-editor tool \`type\` to \`text_editor_20250728\`
 - [ ] **[BLOCKS]** Update text-editor tool \`name\` to \`str_replace_based_edit_tool\` — **changing only the \`type\` and keeping \`name: "str_replace_editor"\` returns a 400**
-- [ ] **[BLOCKS]** Update code-execution tool to \`code_execution_20250825\`
+- [ ] **[BLOCKS]** Update code-execution tool to \`code_execution_20260521\`
 - [ ] **[BLOCKS]** Delete any \`undo_edit\` command call sites
 - [ ] **[TUNE]** Add handling for \`stop_reason == "refusal"\`
 - [ ] **[TUNE]** Add handling for \`stop_reason == "model_context_window_exceeded"\` (4.5+)

@@ -64,7 +64,7 @@ The closing \`'@\` MUST be at column 0 with no leading whitespace.`}
 ${IS_BASH_ENV_FN()?`\`\`\`
 gh pr create --title "Short, descriptive title" --body "$(cat <<'EOF'
 ## Summary
-<1-3 bullet points>
+<bullet points covering all notable changes — as many as the work warrants>
 
 ## Test plan
 [Bulleted markdown checklist of TODOs for testing the pull request...]${PR_BODY_EXTRA_SECTIONS}${PR_ATTRIBUTION_TEXT?`
@@ -75,7 +75,7 @@ EOF
 \`\`\``:`\`\`\`
 gh pr create --title "Short, descriptive title" --body @'
 ## Summary
-<1-3 bullet points>
+<bullet points covering all notable changes — as many as the work warrants>
 
 ## Test plan
 [Bulleted markdown checklist of TODOs for testing the pull request...]${PR_BODY_EXTRA_SECTIONS}${PR_ATTRIBUTION_TEXT?`

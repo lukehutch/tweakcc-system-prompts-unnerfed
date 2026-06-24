@@ -3,7 +3,7 @@ name: 'Data: Tool use reference — TypeScript'
 description: >-
   TypeScript tool use reference including tool runner, manual agentic loop, code
   execution, and structured outputs
-ccVersion: 2.1.182
+ccVersion: 2.1.186
 -->
 # Tool Use — TypeScript
 
@@ -546,7 +546,7 @@ const response = await client.beta.messages.create({
   container: {
     skills: [{ type: "anthropic", skill_id: "pptx", version: "latest" }],
   },
-  tools: [{ type: "code_execution_20250825", name: "code_execution" }],
+  tools: [{ type: "code_execution_20260521", name: "code_execution" }],
   betas: ["code-execution-2025-08-25", "skills-2025-10-02"],
   messages: [{ role: "user", content: "Create a 3-slide deck about X." }],
 });

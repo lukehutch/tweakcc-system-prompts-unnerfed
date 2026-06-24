@@ -3,7 +3,7 @@ name: 'Data: Tool use concepts'
 description: >-
   Conceptual foundations of tool use with the Claude API including tool
   definitions, tool choice, and best practices
-ccVersion: 2.1.182
+ccVersion: 2.1.186
 -->
 # Tool Use Concepts
 
@@ -227,14 +227,14 @@ Required on each request:
 
 1. \`client.beta.messages.create(...)\` with **both** beta flags: \`code-execution-2025-08-25\` **and** \`skills-2025-10-02\`.
 2. \`container={"skills": [{"type": "anthropic", "skill_id": "<id>", "version": "latest"}]}\` — the skills list selects which skills are available inside the execution container.
-3. \`tools=[{"type": "code_execution_20250825", "name": "code_execution"}]\` — skills execute via code execution in the container.
+3. \`tools=[{"type": "code_execution_20260521", "name": "code_execution"}]\` — skills execute via code execution in the container.
 
 \`\`\`python
 response = client.beta.messages.create(
     model="{{OPUS_ID}}", max_tokens=16000,
     betas=["code-execution-2025-08-25", "skills-2025-10-02"],
     container={"skills": [{"type": "anthropic", "skill_id": "pptx", "version": "latest"}]},
-    tools=[{"type": "code_execution_20250825", "name": "code_execution"}],
+    tools=[{"type": "code_execution_20260521", "name": "code_execution"}],
     messages=[{"role": "user", "content": "Create a 3-slide presentation on X"}],
 )
 \`\`\`

@@ -143,9 +143,9 @@ identifierMap }`. The `.md` body is reconstructed by interleaving `pieces` with
 the global CC version), and `variables`. `scripts/sync-version.mjs` does exactly
 this, byte-identically to a tweakcc extraction.
 
-> tweakcc does **not** publish every patch release. Expect gaps (e.g. 2.1.180,
-> 2.1.183, 2.1.184, 2.1.186 were never published as of this writing). Use the
-> newest published version ≤ your installed version.
+> tweakcc does **not** publish every patch release, and a fresh release can lag by
+> hours-to-days. If the JSON for your installed version isn't up yet, see Part 8
+> ("the publish lag") — but the normal case is that the latest version is available.
 
 ### B. The installed binary, via `tweakcc unpack` (ground truth, version-independent)
 
@@ -300,7 +300,9 @@ a patch release that changed prompts the published JSON doesn't yet cover):
 CCBIN="$(readlink -f "$(command -v claude)")"
 npx --yes tweakcc@latest unpack /tmp/cc.js "$CCBIN"
 # for each prompt, check its longest pure-ASCII piece is present in /tmp/cc.js
-# (see scripts usage / Part 3 escaping note). 520/525 present => essentially identical.
+# (see scripts usage / Part 3 escaping note). Near-total presence => essentially
+# identical; the only expected misses are micro-prompts that are pure ${interpolation}
+# with no static text long enough to fingerprint (nothing to mismatch).
 ```
 
 To verify an **applied** un-nerf actually reached the binary (after `tweakcc
@@ -345,10 +347,13 @@ Both `sync-version.mjs --download` and `tweakcc --apply` need
 `prompts-X.Y.Z.json`, which lags a fresh CC release by hours-to-days. When it's
 missing (404):
 
-- **Sync the repo to the newest *published* version ≤ installed**, and record the
-  installed-version delta (Part 7 unpack check tells you which prompts the patch
-  release changed). The manifest will pick the rest up automatically once the
-  JSON publishes.
+- **Preferred: wait for the latest version's JSON.** Since we target only the
+  latest, the simplest correct move is to re-run the happy path once
+  `prompts-X.Y.Z.json` for your installed version publishes (usually within a day).
+- **Stopgap only if you must ship now:** sync to the newest *published* version ≤
+  installed and verify against the binary (Part 7). Treat it as temporary — re-sync
+  to the latest as soon as its JSON is up; the manifest will flag whatever the
+  interim version missed. Don't carry the interim version as a tracked target.
 - **Applying to the binary must wait** for the matching JSON (tweakcc can't locate
   prompts without it). Build tweakcc from `main` to get the freshest CC support
   (`install.sh` does this by default); `main` carries prompt-locator/repack fixes
@@ -388,46 +393,52 @@ tweakcc won't overwrite an *edited* `.md`, so a clean extraction needs the
 
 ---
 
-## Part 9 — Worked example: the v2.1.181 → v2.1.185 sync
+## Part 9 — Worked example: the latest sync (v2.1.190)
 
-This is the sync that produced the current state, as a concrete template.
+We track **only the latest** Claude Code version. This section is the most recent
+sync, kept as a concrete template — when you re-run the workflow against a newer
+release, **replace this section** with that sync's numbers rather than appending a
+history.
 
-- **Situation:** repo at un-nerfed v2.1.181; installed binary v2.1.186; latest
-  published JSON v2.1.185 (2.1.186 not published). Targeted **2.1.185**.
-- **Manifest baseline + delta:** generated the 2.1.181 stock manifest, then
-  `sync-version.mjs 2.1.185` reported **28 changed, 13 added, 0 removed** (484
-  unchanged). The 13 added were 12 `data-*` API-reference blobs + `skill-artifact-design.md`.
-- **Rule drift:** `apply-unnerfs.py` → **0 FAILs**. All (then) 78 rules still
-  matched 2.1.185 stock; none of the 28 changed prompts touched a rule target.
-  The changes were functional (auto-mode handling, expanded *security* deny-rules
-  — kept/amplified), version-only re-stamps, backtick-escaping drift, and design
-  guidance **moved into the new `skill-artifact-design`** (a pro-quality skill, no
-  nerf).
-- **Full sweep:** grep-triage of all 525 stock prompts + a 5-way independent
-  category review surfaced **4 missed sibling nerfs** (all bucket-3, human-facing
-  report caps), now added as rules:
-  - `agent-prompt-code-review-part-9-fix-application` — "brief summary of what was
-    fixed/skipped" (same sentence as the already-ruled `simplify-slash-command`).
-  - `system-prompt-troubleshooting-confirmation-policy` — "briefly explain what
-    the fix will do" before a destructive-command confirmation.
-  - `system-prompt-coordinator-mode-orchestration` — "briefly tell the user what
-    you launched".
-  - `system-prompt-autonomous-loop-persistence-…` — "say so in one sentence"
-    (sibling of the ruled `autonomous-loop-check`).
-  Then the **exhaustive sibling audit** (Part 6) — every rule's `stock` grepped
-  against all 525 prompts — surfaced a 5th consistency flip:
-  `system-reminder-async-agent-launched` carries the *same* "briefly tell the user
-  what you launched" sentence as the coordinator rule (flipped, with the
-  anti-duplication "end your response" stop preserved). Result: **83 rules**,
-  `--check` clean. The audit's one remaining cross-file duplicate is an
-  intentional **keep**: that "give a recommendation, not an exhaustive survey"
-  matches `skill-model-migration-guide`, but there it's inside a *sample prompt*
-  quoted for users migrating their own apps (example content, not a directive to
-  Claude — flipping it would corrupt the guide). Context decides.
-- **2.1.186 binary check** (`unpack` + fingerprint): **520/525** prompts byte-present
-  in the installed 2.1.186 binary; **1 changed** —
-  `agent-prompt-review-pr-slash-command` was reworked (the `/review-pr` command
-  appears folded into `/review`; all 17 stock lines gone) — and 4 tiny templated
-  wrappers were unverifiable by fingerprint. **Pending:** when tweakcc publishes
-  `prompts-2.1.186.json`, re-run the workflow; the manifest will flag
-  `review-pr` (and the 4 wrappers) and that rule will need retargeting/retiring.
+- **Situation:** installed binary v2.1.190; tweakcc had published
+  `prompts-2.1.190.json`. Ran the Part-2 happy path targeting **2.1.190**.
+- **Manifest delta:** `sync-version.mjs 2.1.190 --download` reported **13 changed,
+  4 added, 2 removed** (510 unchanged). Added = the reworked `/review` command, a
+  security prompt, a `data-*` reference blob, and a tool description. Removed =
+  `agent-prompt-review-pr-slash-command` and `system-reminder-verify-plan-reminder`.
+- **Rule drift:** `apply-unnerfs.py` → **0 FAILs, 1 MISSING** — the MISSING was the
+  removed `agent-prompt-review-pr-slash-command` (whole file gone). The two changed
+  rule-bearing files (`agent-thread-notes`, `coordinator-mode-orchestration`)
+  applied cleanly; their rule targets did not drift.
+- **The `/review-pr` → `/review` rework (retire, don't retarget):** Anthropic
+  folded `/review-pr` into a new `/review` (`agent-prompt-review-slash-command`).
+  The old self-contained depth cap — "Keep your review concise but thorough. Focus
+  on: [5 dimensions]" — is **gone, not relocated** (zero tree-wide hits). `/review`
+  now delegates depth to `${MEDIUM_EFFORT_CODE_REVIEW_PROMPT}`
+  (= `agent-prompt-code-review-part-6-medium-effort-mode`), and the part-1..9 review
+  architecture carries no unflipped brevity cap (grep-verified). So the rule was
+  **retired**. The new `/review`'s only brevity phrase is a "2-3 sentence overview"
+  preamble before an *uncapped* findings list — a structured-output cap, **kept**
+  per the Part-1 procedure.
+- **Review of the delta:** grep-triage of all 17 changed+added files resolved to
+  **keep** except the rework above — the security changes are amplify-direction
+  (kept), plus `data-*`/skill reference updates, a *functional* size-budget "be
+  terse" in `skill-design-sync` (fits a ~32k sync window), a structured-title cap
+  in `tool-description-artifact`, and the `skill-model-migration-guide` refresh
+  (sample-prompt example content).
+- **Exhaustive sibling audit (Part 6)** surfaced one **pre-existing** gap:
+  `agent-prompt-quick-pr-creation` emits the same PR-body template as the ruled
+  `bash-git-commit…instructions`, with `<1-3 bullet points>` appearing **twice**
+  (the bash-heredoc and PowerShell here-string arms). Closed it with two
+  arm-anchored rules — note the matcher replaces only the first occurrence per rule
+  (`content.replace(stock, unnerf, 1)`), so a doubled phrase needs one rule per
+  occurrence, each anchored on unique surrounding context. Net: **84 rules**
+  (−1 retired, +2 added), `--check` clean. The audit's only remaining un-ruled
+  cross-file duplicate is the intentional `skill-model-migration-guide` keep
+  (the "give a recommendation, not an exhaustive survey" sentence, there inside a
+  *sample prompt* quoted for users — example content, not a directive to Claude).
+- **Binary check** (`unpack` + fingerprint): **526/527** prompts byte-present in
+  the installed 2.1.190 binary; the lone holdout is a pure-`${interpolation}`
+  reminder with no static text to fingerprint (nothing to mismatch). The new
+  `/review`, the coordinator change, and the artifact-title change were all
+  confirmed present — JSON-derived stock == running binary.

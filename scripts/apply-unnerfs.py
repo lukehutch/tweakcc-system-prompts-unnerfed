@@ -225,15 +225,19 @@ RULES: dict[str, list[Rule]] = {
     ],
 
     # -------------------------------------------------------------------------
-    # agent-prompt-review-pr-slash-command.md — exhaustive PR review
+    # agent-prompt-review-pr-slash-command.md: RETIRED in the v2.1.190 sync.
+    # Anthropic reworked the /review-pr command into /review
+    # (agent-prompt-review-slash-command.md, new in 2.1.186). The old
+    # self-contained depth cap — "Keep your review concise but thorough. Focus
+    # on: [5 dimensions]" — is GONE, not relocated (zero hits tree-wide). /review
+    # now delegates review depth to ${MEDIUM_EFFORT_CODE_REVIEW_PROMPT}
+    # (= agent-prompt-code-review-part-6-medium-effort-mode), and the part-1..9
+    # review architecture carries no unflipped brevity cap (grep-verified this
+    # sync; parts 2 & 9 already ruled). The new /review's only brevity phrase is
+    # a "2-3 sentence overview" preamble that precedes the (uncapped) findings
+    # list — a structured-output/orientation cap, KEPT per the Part-1 decision
+    # procedure (UNNERF-GUIDE.md). Nothing to flip here anymore.
     # -------------------------------------------------------------------------
-    "agent-prompt-review-pr-slash-command.md": [
-        Rule(
-            stock="      Keep your review concise but thorough. Focus on:\n      - Code correctness\n      - Following project conventions\n      - Performance implications\n      - Test coverage\n      - Security considerations\n\n      Format your review with clear sections and bullet points.",
-            unnerf="      Make your review exhaustive and detailed. Explain each finding with enough context that the author understands the issue and how to address it. Cover:\n      - Code correctness (with specific line references and reasoning)\n      - Following project conventions (cite the convention being violated)\n      - Performance implications (explain the impact and scale)\n      - Test coverage (gaps, edge cases not covered, missing assertions)\n      - Security considerations (walk through the threat model when relevant)\n      - Architectural fit, maintainability, readability, and adjacent concerns\n\n      Format your review with clear sections and bullet points. Err on the side of more detail, not less — a thorough review saves the author a round-trip.",
-            description="PR review: exhaustive, contextual, multi-dimensional",
-        ),
-    ],
 
     # -------------------------------------------------------------------------
     # agent-prompt-webfetch-summarizer.md — thorough fetched-content summary
@@ -799,6 +803,25 @@ RULES: dict[str, list[Rule]] = {
             stock='<1-3 bullet points>',
             unnerf='<bullet points covering all notable changes — as many as the work warrants>',
             description='PR summary: as many bullets as the work warrants',
+        ),
+    ],
+    # Sibling of the bash-git-commit PR-summary rule above (found via the v2.1.190
+    # exhaustive sibling audit). The /quick-pr command emits the SAME PR body
+    # template but in two arms (IS_BASH_ENV_FN ? bash-heredoc : pwsh-here-string),
+    # so "<1-3 bullet points>" appears TWICE. The matcher replaces only the first
+    # occurrence per rule (content.replace(stock, unnerf, 1)), so flip each arm
+    # with its own rule, each anchored on the distinguishing "--body" prefix to
+    # stay byte-unique. Same flip/text as the sibling above, for consistency.
+    "agent-prompt-quick-pr-creation.md": [
+        Rule(
+            stock="--body \"$(cat <<'EOF'\n## Summary\n<1-3 bullet points>",
+            unnerf="--body \"$(cat <<'EOF'\n## Summary\n<bullet points covering all notable changes — as many as the work warrants>",
+            description="quick-pr summary (bash arm): as many bullets as the work warrants",
+        ),
+        Rule(
+            stock="--body @'\n## Summary\n<1-3 bullet points>",
+            unnerf="--body @'\n## Summary\n<bullet points covering all notable changes — as many as the work warrants>",
+            description="quick-pr summary (pwsh arm): as many bullets as the work warrants",
         ),
     ],
     "tool-description-workflow.md": [

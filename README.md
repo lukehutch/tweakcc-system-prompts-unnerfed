@@ -3,12 +3,12 @@
 Modified [Claude Code](https://docs.claude.com/en/docs/claude-code/overview) system prompts that remove the "be brief, be minimal" directives and replace them with instructions to be thorough. These are the actual files I use daily. Nothing here is cleaned up for public consumption — this is the live set, including all in-progress un-nerfs.
 
 > [!NOTE]
-> Currently aligned with **Claude Code v2.1.185** (the latest version tweakcc has
-> published prompt data for). Verified against the installed **v2.1.186** binary:
-> 520/525 prompts are byte-identical; the one behavioral change in 2.1.186
-> (`/review-pr` reworked into `/review`) will sync automatically once tweakcc
-> publishes `prompts-2.1.186.json`. See [UNNERF-GUIDE.md](UNNERF-GUIDE.md) for how
-> upgrades work.
+> Currently aligned with **Claude Code v2.1.190**. Verified against the installed
+> **v2.1.190** binary: 526/527 prompts are byte-identical (the lone exception is a
+> pure-`${interpolation}` reminder with no static text to fingerprint — nothing to
+> mismatch). The `/review-pr` → `/review` rework is fully synced (the old rule
+> retired, the new command reviewed). See [UNNERF-GUIDE.md](UNNERF-GUIDE.md) for
+> how upgrades work.
 
 |  |  |
 |---|---|
@@ -134,12 +134,12 @@ system-prompts-github/
 │   ├── sync-version.mjs          # rebuilds stock prompts + auto-diffs the checksum manifest
 │   ├── prompt-checksums.mjs      # MD5 manifest tool (used by sync-version; standalone CLI too)
 │   └── apply-unnerfs.py          # re-applies all un-nerfs after a CC version bump
-└── system-prompts/               # 525 markdown files (Claude Code v2.1.185)
+└── system-prompts/               # 527 markdown files (Claude Code v2.1.190)
     ├── system-prompt-*.md        # core behavioral instructions, tone, task guidance (135)
-    ├── tool-description-*.md     # tool descriptions shown to the model (130)
-    ├── system-reminder-*.md      # injected into user messages (77)
-    ├── data-*.md                 # reference data blobs (61)
-    ├── agent-prompt-*.md         # subagent system prompts (61)
+    ├── tool-description-*.md     # tool descriptions shown to the model (131)
+    ├── system-reminder-*.md      # injected into user messages (76)
+    ├── data-*.md                 # reference data blobs (62)
+    ├── agent-prompt-*.md         # subagent system prompts (62)
     ├── skill-*.md                # user-facing skill bodies (55)
     └── tool-parameter-*.md       # parameter-level tool descriptions (5)
 ```
@@ -153,7 +153,7 @@ changed/added/removed on the next version bump — see [UNNERF-GUIDE.md](UNNERF-
 
 ## Compatibility
 
-- **Claude Code version:** Aligned with v2.1.185. Individual prompts carry `ccVersion:` frontmatter ranging from v2.0.14 to v2.1.185. When Anthropic ships a new version, see [UNNERF-GUIDE.md](UNNERF-GUIDE.md) for the full upgrade playbook (and [MAINTENANCE.md](MAINTENANCE.md) for script flags).
+- **Claude Code version:** Aligned with v2.1.190. Individual prompts carry `ccVersion:` frontmatter (the version when *that* prompt last changed) ranging from v2.0.14 to v2.1.187. When Anthropic ships a new version, see [UNNERF-GUIDE.md](UNNERF-GUIDE.md) for the full upgrade playbook (and [MAINTENANCE.md](MAINTENANCE.md) for script flags).
 - **Model family:** Tuned for current Claude models (Opus 4.8 / Sonnet 4.6 / Haiku 4.5). Older or smaller models might over-explain simple responses with these prompts active.
 - **Over-verbosity:** This is the main failure mode to watch for. If Claude starts writing essays in response to "what time is it?", look at `system-prompt-communication-style.md` and `system-prompt-tone-concise-output-short.md` first.
 - **Token cost:** Thorough output uses more tokens. Plan accordingly.
