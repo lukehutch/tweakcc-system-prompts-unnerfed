@@ -217,11 +217,11 @@ cc_install_npm() {
     || { sed 's/^/      /' "$logf" >&2 2>/dev/null || true; die "npm could not install @anthropic-ai/claude-code@${version} (a global npm install may need sudo). Fix the error above, install it yourself, or set CC_PIN=0."; }
 }
 
-# Persist DISABLE_AUTOUPDATER=1 into ~/.claude/settings.json so the pinned version
-# (and the un-nerf patched into it) survives normal `claude` launches — otherwise
-# CC's auto-updater npm-updates to the latest version on the next start and reverts
-# both. Merges into existing settings via node and NEVER clobbers on a parse error.
-# Exit codes from the node helper: 0 wrote, 2 already set, 3 couldn't parse/write.
+# Persist DISABLE_AUTOUPDATER=1 into ~/.claude/settings.json so the un-nerf patched
+# into the binary (and any version pin) survives normal `claude` launches —
+# otherwise CC's auto-updater npm-updates to the latest version on the next start
+# and reverts both. Merges into existing settings via node; NEVER clobbers on a
+# parse error. Exit codes from the node helper: 0 wrote, 2 already set, 3 failed.
 cc_persist_disable_autoupdate() {
   local settings="${HOME}/.claude/settings.json" rc
   mkdir -p "${HOME}/.claude"
@@ -238,8 +238,10 @@ cc_persist_disable_autoupdate() {
       fs.writeFileSync(p, JSON.stringify(j, null, 2) + "\n");
     ' "$settings"; then rc=0; else rc=$?; fi
   case "${rc:-0}" in
-    0) info "disabled CC auto-update: set DISABLE_AUTOUPDATER=1 in ${settings}" ;;
-    2) info "CC auto-update already disabled in ${settings}" ;;
+    0) info "added DISABLE_AUTOUPDATER=1 to ${settings} to turn off Claude Code's auto-updater"
+       info "  why: CC's auto-updater replaces the binary with a newer stock build on the next launch, which would silently revert this un-nerf (and any version pin)."
+       info "  note: CC will no longer self-update. After any deliberate CC upgrade, re-run this script — each new version's changed prompts must be re-un-nerfed." ;;
+    2) info "CC auto-update already disabled in ${settings} (DISABLE_AUTOUPDATER=1)" ;;
     *) warn "could not update ${settings} — add '\"env\": { \"DISABLE_AUTOUPDATER\": \"1\" }' yourself, or CC will auto-update and revert the un-nerf" ;;
   esac
 }
@@ -370,13 +372,6 @@ if [ "$CC_PIN" = 1 ]; then
     fi
     info "Claude Code is now v${CC_VERSION} (binary: ${CC_BIN})"
   fi
-  # Keep the pin (and the un-nerf patched into it) from being auto-reverted on the
-  # next `claude` launch. Done whether we just installed or it was already at target.
-  if [ "$DRY_RUN" = 1 ]; then
-    info "[dry-run] would set DISABLE_AUTOUPDATER=1 in ${HOME}/.claude/settings.json so CC stays pinned"
-  else
-    cc_persist_disable_autoupdate
-  fi
 else
   info "CC_PIN=0: building for the installed Claude Code v${CC_INSTALLED} (rules may not apply cleanly if it differs from the supported version)"
 fi
@@ -386,7 +381,8 @@ fi
 # ---------------------------------------------------------------------------
 log "Building un-nerfed prompts for v${CC_VERSION}"
 if [ "$DRY_RUN" = 1 ]; then
-  info "[dry-run] would: npm install (gray-matter), sync-version.mjs ${CC_VERSION} --download, apply-unnerfs.py"
+  info "[dry-run] would: npm install (gray-matter), sync-version.mjs ${CC_VERSION} --download, apply-unnerfs.py,"
+  info "[dry-run]        tweakcc --apply (patch the binary), then set DISABLE_AUTOUPDATER=1 in ${HOME}/.claude/settings.json"
   log "Dry run complete — no changes made."
   exit 0
 fi
@@ -498,6 +494,10 @@ if $TWEAKCC unpack "$VERIFY_JS" "$CC_BIN" >/dev/null 2>&1; then
   done
   if [ "$hits" -ge 4 ]; then
     info "${G}verified:${N} un-nerf is present in the patched binary (${hits}/5 sentinels)"
+    # The un-nerf landed — ensure CC's auto-updater is off so a background update
+    # can't replace this binary and silently revert it. Idempotent: only writes (and
+    # prints the reason) when DISABLE_AUTOUPDATER isn't already set.
+    cc_persist_disable_autoupdate
     log "${G}Done.${N} Restart any running Claude Code sessions to pick up the un-nerfed prompts."
     info "Roll back any time with:  npx tweakcc@latest --restore"
   elif [ "$hits" -ge 1 ]; then
