@@ -1,28 +1,11 @@
 # tweakcc system prompts — un-nerfed edition
 
-Modified [Claude Code](https://docs.claude.com/en/docs/claude-code/overview) system prompts that remove the "be brief, be minimal" directives and replace them with instructions to be thorough. These are the actual files I use daily. Nothing here is cleaned up for public consumption — this is the live set, including all in-progress un-nerfs.
+Modified [Claude Code](https://docs.claude.com/en/docs/claude-code/overview) system prompts that strip the "be brief, be minimal" directives and replace them with instructions to be thorough. This is the live set I run daily — not cleaned up for public consumption, in-progress un-nerfs and all.
 
 > [!NOTE]
-> **Latest Claude Code is v2.1.197; this tree is built from v2.1.196** — the newest
-> version tweakcc has published prompt data for (`prompts-2.1.197.json` is still a
-> 404, the usual publish lag). So **2.1.196 is a stopgap**: re-sync to 2.1.197 the
-> moment its JSON lands (`node scripts/sync-version.mjs 2.1.197 --download`, then
-> `python3 scripts/apply-unnerfs.py`). The 2.1.196 rebuild itself is clean — **81
-> un-nerf rules replay across 62 files** (0 FAILs, `--check` clean), reconstructed
-> byte-identically to a tweakcc extraction. No binary fingerprint was run (the sync
-> machine's binary is v2.1.191, older than both). Two rules were retired this sync —
-> upstream moved the coordinator/async launch-note phrase into a runtime variable
-> and deleted the other copy; see [UNNERF-GUIDE.md](UNNERF-GUIDE.md) Part 9 for the
-> details and the full upgrade playbook.
+> **Built from Claude Code v2.1.196** — 81 un-nerf rules across 62 files, `--check` clean, reconstructed byte-identically to a tweakcc extraction. It's a **stopgap**: the latest release is v2.1.197, but tweakcc hasn't published its prompt data yet (the usual hours-to-days publish lag), so re-sync when it lands. Full sync record: [UNNERF-GUIDE.md](UNNERF-GUIDE.md) Part 9.
 
-|  |  |
-|---|---|
-| [Install](#install) | Get these running on your machine |
-| [The thesis](#the-un-nerf-thesis) | Why these edits exist |
-| [Examples](#beforeafter-examples) | What the changes look like |
-| [Un-nerf guide](UNNERF-GUIDE.md) | **Objectives + the full upgrade playbook** |
-| [Maintenance](MAINTENANCE.md) | Script flags and the update workflow |
-| [Background](BACKGROUND.md) | How tweakcc works, where these edits came from |
+**Docs:** [Un-nerf guide](UNNERF-GUIDE.md) (objectives + upgrade playbook) · [Maintenance](MAINTENANCE.md) (script flags) · [Background](BACKGROUND.md) (how tweakcc works)
 
 ---
 
@@ -30,155 +13,91 @@ Modified [Claude Code](https://docs.claude.com/en/docs/claude-code/overview) sys
 
 You need [tweakcc](https://github.com/Piebald-AI/tweakcc) to patch these into your Claude Code binary.
 
-### Quick install (recommended)
-
-[`install.sh`](install.sh) detects your Claude Code version, downloads the latest un-nerf rules straight from this repo, rebuilds that exact version's stock prompts, replays every un-nerf onto them, patches the binary, and then verifies the un-nerf actually landed:
+**Quick (recommended).** [`install.sh`](install.sh) detects your CC version, rebuilds that version's stock prompts, replays every un-nerf, patches the binary, and **verifies the change actually landed** — failing loudly and leaving your binary clean if it didn't:
 
 ```bash
-# clone, then:
-./install.sh                 # ./install.sh --help for options (--prompts-only, --dry-run)
+./install.sh          # --help for options (--prompts-only, --dry-run)
 ```
 
-It does a bare `tweakcc --apply` (the only invocation that actually applies system-prompt `.md` edits) and then **verifies the un-nerf reached the binary** — failing loudly and leaving your binary clean if it didn't. It runs fully non-interactively.
+It runs non-interactively and builds tweakcc from `main` on purpose: tweakcc's npm releases can lag a fresh CC build by hours-to-days, and `main` carries the prompt-locator/repack fixes soonest. (Set `TWEAKCC_VERSION=latest` to use a released tweakcc via `npx` instead.)
 
-> [!NOTE]
-> **v2.1.179 & v2.1.181 binary patching works.** Earlier releases (4.0.14) couldn't fully patch these binaries: a failed UI patch (`patches-applied-indication`) aborted the repack, and the prompt locator missed Latin-1 characters that recent Bun builds store as `\xHH` (e.g. `·` → `\xB7`), so ~10 prompts failed to apply. Both are now fixed upstream — the repack abort in tweakcc `main`, and the locator in [Piebald-AI/tweakcc#808](https://github.com/Piebald-AI/tweakcc/pull/808) (`escapeNonAsciiForRegex` now also emits the `\xHH` alternative for U+0080–U+00FF, with regression tests), merged and released in tweakcc 4.1.1. `install.sh` **builds tweakcc from upstream `main`** and applies all binary-applicable un-nerfs with **0 failures** — verified on real v2.1.179 and v2.1.181 installs. It builds from `main` (not the npm release) on purpose: tweakcc's releases can lag a brand-new Claude Code build by hours-to-days, and `main` carries the needed prompt-locator/repack fix soonest. (To use a released tweakcc via `npx` instead — lighter, but it can lag a fresh CC release — set `TWEAKCC_VERSION=latest`.)
-
-### Manual install
-
-Prefer to do it by hand, or want a pinned release? Grab the un-nerfed prompts as a release zip from [Releases](https://github.com/BenIsLegit/tweakcc-system-prompts-unnerfed/releases) (pick the tag matching your CC version), then:
+**Manual.** Extract stock prompts, then overlay the un-nerfed ones:
 
 ```bash
-# 1. Wipe any existing tweakcc prompts (tweakcc won't overwrite edited files,
-#    so a clean slate avoids conflicts)
-rm -rf ~/.tweakcc/system-prompts          # Unix
-# Remove-Item -Recurse -Force "$HOME\.tweakcc\system-prompts"  # Windows
-
-# 2. Extract fresh stock prompts from your Claude Code binary (interactive TUI)
-npx tweakcc@latest
-
-# 3. Drop the un-nerfed prompts on top of the stock ones (overwriting stock).
-#    Replace <PATH-TO-DOWNLOADED-ZIP> with where you saved the release asset.
-unzip -o <PATH-TO-DOWNLOADED-ZIP> -d ~/.tweakcc/system-prompts/   # Unix
-# Expand-Archive -Force <PATH-TO-DOWNLOADED-ZIP> "$HOME\.tweakcc\system-prompts" # Windows
-
-# 4. Patch the binary. A bare --apply is what applies system-prompt .md edits.
-#    NOTE: on very recent CC (e.g. v2.1.179) this currently aborts or only
-#    partially matches — see the warning under "Quick install" above. Always
-#    verify it took effect (unpack + grep) before trusting it.
-npx tweakcc@latest --apply
-
-# 5. Restart any running Claude Code sessions
+rm -rf ~/.tweakcc/system-prompts     # clean slate — tweakcc won't overwrite edited files
+npx tweakcc@latest                   # extract fresh stock via the TUI
+cp system-prompts/*.md ~/.tweakcc/system-prompts/   # overlay this repo's un-nerfs
+npx tweakcc@latest --apply           # a bare --apply is what applies .md edits
+# then restart any running Claude Code sessions
 ```
 
-Leave the rest of `~/.tweakcc/` alone when you wipe `system-prompts/`. Files like `config.json`, `systemPromptOriginalHashes.json`, and `native-binary.backup` need to survive.
+On Windows, swap `rm -rf`→`Remove-Item -Recurse -Force` and `cp`→`Copy-Item`. Leave the rest of `~/.tweakcc/` alone — `config.json`, the hash files, and `native-binary.backup` must survive. Always confirm the patch took (unpack + grep) before trusting it; see [UNNERF-GUIDE.md](UNNERF-GUIDE.md) Part 7.
 
-You don't have to patch anything to get value from this repo. The files work as a prompt-engineering reference on their own — browse [`system-prompts/`](system-prompts) on GitHub, or unzip the release asset and read them locally. The diffs between stock and un-nerfed text are a case study in how brevity directives shape model behavior. And if you only want one or two changes, cherry-pick individual `.md` files. Each one is self-contained.
+You don't have to patch anything to get value here — the files stand alone as a prompt-engineering reference. Browse [`system-prompts/`](system-prompts), diff stock against un-nerfed to see how brevity directives shape behavior, or cherry-pick individual `.md` files; each is self-contained.
 
 ---
 
 ## The un-nerf thesis
 
-Claude Code's stock prompts contain way more instructions to be brief than instructions to be thorough. Count them yourself. They fall into four groups:
+Claude Code's stock prompts carry far more instructions to be brief than to be thorough — roughly 5:1. They fall into four groups:
 
-1. **Chat brevity** — "respond in 2-3 sentences," "terse one-liner is fine." These control the text Claude sends you. Mostly fine. Nobody wants a wall of text for "what's the git status."
-2. **Implementation brevity** — "don't add abstractions," "don't gold-plate," "simplest approach." These control the code Claude writes. They cause shallow implementations.
-3. **Process brevity** — "as quickly as possible," "report back concisely," "2-sentence summary." These control how Claude investigates and reports. They cause under-investigation and under-reporting.
-4. **Thoroughness** — "think step by step," "consider edge cases." These exist, but they're outnumbered roughly 5:1.
+1. **Chat brevity** — "respond in 2-3 sentences." Controls the text Claude sends you. Mostly fine; nobody wants an essay for "what's the git status."
+2. **Implementation brevity** — "don't add abstractions," "simplest approach." Controls the code Claude writes. Produces shallow implementations.
+3. **Process brevity** — "as quickly as possible," "2-sentence summary." Controls how Claude investigates and reports. Produces under-investigation and under-reporting.
+4. **Thoroughness** — "think step by step," "consider edge cases." Already good — just outnumbered.
 
-The principle: **keep group 1, flip groups 2 and 3, amplify group 4.**
-
-That's it. Every edit in this repo follows that rule. The goal isn't making Claude verbose. It's making Claude thorough. The stock prompts treat those as the same thing, and they're not.
+The whole project is one rule: **keep group 1, flip groups 2 and 3, amplify group 4.** The goal isn't verbosity — it's thoroughness. The stock prompts conflate the two; they aren't the same.
 
 ---
 
-## Before/after examples
+## Before / after
 
-### Tone directive (`system-prompt-tone-concise-output-short.md`)
+**Tone** — `system-prompt-tone-concise-output-short.md`
 
-**Stock:**
-> Your responses should be short and concise.
+> **Stock:** Your responses should be short and concise.
+>
+> **Un-nerfed:** Your responses should be thorough, clear, and rich with explanation, reasoning, and context. Favor depth and completeness over brevity […] There is no word limit; use whatever length the task genuinely warrants.
 
-**Un-nerfed:**
-> Your responses should be thorough, clear, and rich with explanation, reasoning, and context. Favor depth and completeness over brevity — the user benefits from understanding the full picture, including tradeoffs, related observations, and the reasoning behind decisions. There is no word limit; use whatever length the task genuinely warrants to produce genuinely helpful output.
+**Implementation scope** — `system-prompt-doing-tasks-no-additions.md`
 
-### Error handling (`system-prompt-doing-tasks-no-unnecessary-error-handling.md`)
+> **Stock:** Don't add features, refactor, or introduce abstractions beyond what the task requires […] Three similar lines is better than a premature abstraction.
+>
+> **Un-nerfed:** Implement the task completely and to a senior-engineer standard. Handle the edge cases, error paths, and failure modes the task implies […] Leave every file you touch clearer than you found it. And never ship a half-finished implementation.
 
-**Stock:**
-> Don't add error handling, fallbacks, or validation for scenarios that can't happen. Trust internal code and framework guarantees. Only validate at system boundaries (user input, external APIs). Don't use feature flags or backwards-compatibility shims when you can just change the code.
-
-**Un-nerfed:**
-> Add error handling and validation at real boundaries where failures can realistically occur (user input, external APIs, I/O, network). Trust internal code and framework guarantees for truly internal paths. Don't use feature flags or backwards-compatibility shims when you can just change the code.
-
-The stock version leads with the prohibition ("don't add"). The un-nerfed version leads with the requirement ("add ... at real boundaries"). Same safety caveat, opposite default.
-
-### Implementation scope (`system-prompt-doing-tasks-no-additions.md`)
-
-**Stock:** "Don't add features, refactor, or introduce abstractions beyond what the task requires. A bug fix doesn't need surrounding cleanup [...] Three similar lines is better than a premature abstraction. No half-finished implementations either."
-
-**Un-nerfed:** "Implement the task completely and to a senior-engineer standard. Handle the edge cases, error paths, and failure modes the task implies, even if unstated [...] When a bug fix exposes adjacent breakage or you touch code that is plainly flawed, fix it and say what you did rather than working around it. Leave every file you touch clearer than you found it. And never ship a half-finished implementation."
-
-The stock version caps the work at the literal ask, which produces shallow code. The un-nerfed version demands a complete, robust, senior-grade implementation while keeping the genuinely good "never half-finished" clause.
-
-> [!NOTE]
-> Earlier editions of this README highlighted a `system-reminder-thinking-frequency-tuning.md` flip ("Avoid unnecessary thinking" → "Think as deeply as the work benefits from"). Anthropic **removed that reminder entirely** somewhere between v2.1.142 and v2.1.179, so there is no longer a "think less" directive to flip — a rare case of upstream moving in the un-nerf direction on its own. The rule was retired during the v2.1.179 sync.
+The pattern holds throughout: stock leads with the prohibition and caps work at the literal ask; the un-nerf leads with the requirement and preserves any genuinely-good clause (safety caveats, "never half-finished").
 
 ---
 
 ## Repo layout
 
 ```
-system-prompts-github/
-├── README.md
-├── UNNERF-GUIDE.md               # objectives + the full upgrade playbook
-├── MAINTENANCE.md
-├── BACKGROUND.md
-├── install.sh                    # one-command installer; fetches the latest rules from git
+├── install.sh                    # one-command installer (fetches latest rules from git)
 ├── system-prompt-checksums.json  # MD5 of every STOCK prompt; drives change detection
 ├── scripts/
-│   ├── sync-version.mjs          # rebuilds stock prompts + auto-diffs the checksum manifest
-│   ├── prompt-checksums.mjs      # MD5 manifest tool (used by sync-version; standalone CLI too)
-│   └── apply-unnerfs.py          # re-applies all un-nerfs after a CC version bump
+│   ├── sync-version.mjs          # rebuild stock prompts + auto-diff the checksum manifest
+│   ├── prompt-checksums.mjs      # MD5 manifest tool
+│   └── apply-unnerfs.py          # replay all un-nerfs after a CC version bump
 └── system-prompts/               # 526 markdown files (Claude Code v2.1.196)
-    ├── tool-description-*.md     # tool descriptions shown to the model (134)
-    ├── system-prompt-*.md        # core behavioral instructions, tone, task guidance (128)
-    ├── system-reminder-*.md      # injected into user messages (73)
-    ├── data-*.md                 # reference data blobs (67)
-    ├── agent-prompt-*.md         # subagent system prompts (63)
-    ├── skill-*.md                # user-facing skill bodies (55)
-    └── tool-parameter-*.md       # parameter-level tool descriptions (5)
 ```
 
-Counts are approximate. The full inventory is whatever `ls system-prompts/` shows.
-`system-prompt-checksums.json` holds the MD5 of each **stock** prompt (not the
-un-nerfed files) so that `sync-version.mjs` can report exactly what Anthropic
-changed/added/removed on the next version bump — see [UNNERF-GUIDE.md](UNNERF-GUIDE.md).
+`system-prompts/` holds the un-nerfed prompts (`tool-description-*`, `system-prompt-*`, `system-reminder-*`, `data-*`, `agent-prompt-*`, `skill-*`, `tool-parameter-*`). The checksum manifest fingerprints **stock**, not the un-nerfed files — so on a version bump `sync-version.mjs` reports exactly what Anthropic changed, uncoloured by the un-nerfs. See [UNNERF-GUIDE.md](UNNERF-GUIDE.md).
 
 ---
 
 ## Compatibility
 
-- **Claude Code version:** Built from v2.1.196 — a **stopgap**; the latest CC release is v2.1.197, whose prompt JSON tweakcc hasn't published yet (re-sync when it does). Individual prompts carry `ccVersion:` frontmatter (the version when *that* prompt last changed) ranging from v2.0.14 to v2.1.196. When Anthropic ships a new version, see [UNNERF-GUIDE.md](UNNERF-GUIDE.md) for the full upgrade playbook (and [MAINTENANCE.md](MAINTENANCE.md) for script flags).
-- **Model family:** Tuned for current Claude models (Opus 4.8 / Sonnet 4.6 / Haiku 4.5). Older or smaller models might over-explain simple responses with these prompts active.
-- **Over-verbosity:** This is the main failure mode to watch for. If Claude starts writing essays in response to "what time is it?", look at `system-prompt-communication-style.md` and `system-prompt-tone-concise-output-short.md` first.
-- **Token cost:** Thorough output uses more tokens. Plan accordingly.
+- **Claude Code:** built from v2.1.196 (stopgap toward v2.1.197). Per-prompt `ccVersion:` frontmatter spans v2.0.14–v2.1.196. Upgrade playbook: [UNNERF-GUIDE.md](UNNERF-GUIDE.md).
+- **Models:** tuned for current Claude (Opus 4.8 / Sonnet 4.6 / Haiku 4.5). Older or smaller models may over-explain trivial asks.
+- **Watch for over-verbosity** — the main failure mode. If Claude writes essays for "what time is it?", start with `system-prompt-communication-style.md` and `system-prompt-tone-concise-output-short.md`. Thorough output also costs more tokens; plan accordingly.
 
 ---
 
-## Credits
+## Credits & license
 
-- **[tweakcc](https://github.com/Piebald-AI/tweakcc)** by Piebald AI — the tool that makes all of this possible.
-- **[roman01la's patch-claude-code.sh gist](https://gist.github.com/roman01la/483d1db15043018096ac3babf5688881)** — the original thesis and first 11 patches, which I translated into tweakcc format. See [BACKGROUND.md](BACKGROUND.md#the-original-gist) for the full breakdown.
+- **[tweakcc](https://github.com/Piebald-AI/tweakcc)** by Piebald AI — the tool that makes this possible.
+- **[roman01la's gist](https://gist.github.com/roman01la/483d1db15043018096ac3babf5688881)** — the original thesis and first 11 patches, translated into tweakcc format ([BACKGROUND.md](BACKGROUND.md#the-original-gist)).
 - **Anthropic** — for Claude Code, and for not going out of their way to stop community patching.
 
----
+Prompt text in `system-prompts/*.md` is Anthropic's copyright, extracted by tweakcc and modified; redistributed as a modified subset on a fair-use / research basis. The docs and repo organization are **CC0 / public domain**.
 
-## License / disclaimer
-
-The prompt text in `system-prompts/*.md` was extracted from Claude Code by tweakcc, then modified. The original prompt content is Anthropic's copyright. I'm redistributing a modified subset under fair-use / research-use terms, same basis the tweakcc project operates on.
-
-The README, docs, and repo organization are **CC0 / public domain**.
-
-**This is not Anthropic-endorsed or Anthropic-supported.** Applying these will change Claude Code's behavior in ways that might not suit your workflow. Test in a throwaway session first. Keep the tweakcc binary backup so you can roll back.
-
-If something here behaves badly, open an issue or PR.
+**Not Anthropic-endorsed.** These change Claude Code's behavior in ways that may not suit your workflow — test in a throwaway session first, and keep the tweakcc binary backup so you can roll back. Something misbehaving? Open an issue or PR.
