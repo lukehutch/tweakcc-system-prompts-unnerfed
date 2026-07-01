@@ -4,7 +4,7 @@ description: >-
   Design guidance skill for producing distinctive, polished artifacts by
   calibrating visual treatment, applying design fundamentals, planning
   color/type/layout, and avoiding templated AI-generated defaults
-ccVersion: 2.1.187
+ccVersion: 2.1.193
 -->
 ---
 name: artifact-design
@@ -48,6 +48,8 @@ Fundamentals below apply to everything. The editorial process after that runs on
 **Structure is information** Structural devices, numbering, eyebrows, dividers, labels, should encode something true about the content, not decorate it. Many generic designs use numbered markers (01 / 02 / 03), but that's only appropriate if the content actually is a sequence - like a real process or a typed timeline where order carries information the reader needs. Question if choices like numbered markers actually make sense before incorporating them.
 
 **When it's a UI, not a document** A dashboard or tool is scanned and operated, not read top-to-bottom, so the craft shifts from typography to information design. Surface the summary before the detail; encode state in form as well as number — a pill, a chip, a severity stripe — so what needs attention reads at a glance. Semantic color (good / warning / critical) is separate from the accent hue and doesn't count as your accent. Give sparklines and charts the same care as type: an area fill, a faint grid, an emphasized endpoint. What's interactive should look interactive.
+
+<!-- dataviz-callout -->
 
 ## Process
 

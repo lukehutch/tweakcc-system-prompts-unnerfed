@@ -393,52 +393,68 @@ tweakcc won't overwrite an *edited* `.md`, so a clean extraction needs the
 
 ---
 
-## Part 9 — Worked example: the latest sync (v2.1.190)
+## Part 9 — Worked example: the latest sync (v2.1.196)
 
 We track **only the latest** Claude Code version. This section is the most recent
 sync, kept as a concrete template — when you re-run the workflow against a newer
 release, **replace this section** with that sync's numbers rather than appending a
 history.
 
-- **Situation:** installed binary v2.1.190; tweakcc had published
-  `prompts-2.1.190.json`. Ran the Part-2 happy path targeting **2.1.190**.
-- **Manifest delta:** `sync-version.mjs 2.1.190 --download` reported **13 changed,
-  4 added, 2 removed** (510 unchanged). Added = the reworked `/review` command, a
-  security prompt, a `data-*` reference blob, and a tool description. Removed =
-  `agent-prompt-review-pr-slash-command` and `system-reminder-verify-plan-reminder`.
-- **Rule drift:** `apply-unnerfs.py` → **0 FAILs, 1 MISSING** — the MISSING was the
-  removed `agent-prompt-review-pr-slash-command` (whole file gone). The two changed
-  rule-bearing files (`agent-thread-notes`, `coordinator-mode-orchestration`)
-  applied cleanly; their rule targets did not drift.
-- **The `/review-pr` → `/review` rework (retire, don't retarget):** Anthropic
-  folded `/review-pr` into a new `/review` (`agent-prompt-review-slash-command`).
-  The old self-contained depth cap — "Keep your review concise but thorough. Focus
-  on: [5 dimensions]" — is **gone, not relocated** (zero tree-wide hits). `/review`
-  now delegates depth to `${MEDIUM_EFFORT_CODE_REVIEW_PROMPT}`
-  (= `agent-prompt-code-review-part-6-medium-effort-mode`), and the part-1..9 review
-  architecture carries no unflipped brevity cap (grep-verified). So the rule was
-  **retired**. The new `/review`'s only brevity phrase is a "2-3 sentence overview"
-  preamble before an *uncapped* findings list — a structured-output cap, **kept**
-  per the Part-1 procedure.
-- **Review of the delta:** grep-triage of all 17 changed+added files resolved to
-  **keep** except the rework above — the security changes are amplify-direction
-  (kept), plus `data-*`/skill reference updates, a *functional* size-budget "be
-  terse" in `skill-design-sync` (fits a ~32k sync window), a structured-title cap
-  in `tool-description-artifact`, and the `skill-model-migration-guide` refresh
-  (sample-prompt example content).
-- **Exhaustive sibling audit (Part 6)** surfaced one **pre-existing** gap:
-  `agent-prompt-quick-pr-creation` emits the same PR-body template as the ruled
-  `bash-git-commit…instructions`, with `<1-3 bullet points>` appearing **twice**
-  (the bash-heredoc and PowerShell here-string arms). Closed it with two
-  arm-anchored rules — note the matcher replaces only the first occurrence per rule
-  (`content.replace(stock, unnerf, 1)`), so a doubled phrase needs one rule per
-  occurrence, each anchored on unique surrounding context. Net: **84 rules**
-  (−1 retired, +2 added), `--check` clean. The audit's only remaining un-ruled
-  cross-file duplicate is the intentional `skill-model-migration-guide` keep
-  (the "give a recommendation, not an exhaustive survey" sentence, there inside a
-  *sample prompt* quoted for users — example content, not a directive to Claude).
-- **Binary check** (`unpack` + fingerprint): **526/527** prompts byte-present in
-  the installed 2.1.190 binary; the lone holdout is a pure-`${interpolation}`
-  reminder with no static text to fingerprint (nothing to mismatch). The new
-  `/review`, the coordinator change, and the artifact-title change were all
-  confirmed present — JSON-derived stock == running binary.
+- **Situation (a publish-lag stopgap — Part 8):** repo aligned to v2.1.191. The
+  latest Claude Code release is **v2.1.197**, but tweakcc had published prompt data
+  only through **v2.1.196** (`prompts-2.1.197.json` = 404). Per Part 8 the move is
+  to sync to the newest *published* version and treat it as interim: ran the Part-2
+  happy path targeting **2.1.196** (jumping over 192–195 in one hop), **to be
+  re-synced to 2.1.197 once its JSON publishes**. No binary fingerprint (Part 7)
+  was run — the binary installed on the sync machine was still v2.1.191, older than
+  both the sync target and the latest release; alignment is to the published JSON,
+  which `sync-version.mjs` reconstructs byte-identically to a tweakcc extraction.
+- **Manifest delta:** `sync-version.mjs 2.1.196 --download` reported **14 changed,
+  7 added, 0 removed** (505 unchanged); 519 → 526 prompts. Added = 3 auth-gateway
+  `data-*` pages (gateway protocol, landing page, device-code entry), 3 tool
+  descriptions (`invoke-skill`, `report-code-review-findings`,
+  `background-monitor` ws-source), and 1 structured-JSON agent prompt
+  (`fleet-agent-suggestion` scope personalization).
+- **Rule drift:** `apply-unnerfs.py` → **2 FAILs, 0 missing** — both FAILs were the
+  *same* retired launch-note phrase (`briefly tell the user what you launched and
+  end your response.`) in its two sibling files. The other 12 changed files carried
+  no rule.
+- **Two retirements (structural, not reword) — the crux of this sync:**
+  - `system-prompt-coordinator-mode-orchestration`: Anthropic **variable-ized** the
+    launch note. Line 44 went from "…briefly tell the user what you launched and end
+    your response." to "…`${WAIT_FOR_AGENT_RESULTS_INSTRUCTION}` and end your
+    response." The brevity directive now lives inside a runtime variable whose value
+    is **not** in any extracted `.md`, so the tweakcc `.md`-patch mechanism (static
+    `pieces` replaced; `${VARS}` are wildcards) can't reach it. Retired — the
+    surviving static text ("and end your response" = functional stop; "Never
+    fabricate…results" = correctness guard) carries no nerf.
+  - `system-reminder-async-agent-launched`: Anthropic **deleted** the clause (in
+    v2.1.193). The reminder lost "Work on non-overlapping tasks, or briefly tell the
+    user what you launched and end your response." and now ends at "…topics it is
+    using." — a pure anti-duplication + don't-read-the-JSONL-transcript warning.
+    Retired.
+  - Net: **81 rules** (−2 retired, +0 added) across **62 files**, `--check` clean.
+    Note the general lesson: a nerf can leave the patchable surface by being moved
+    into a `${VARIABLE}` (unreachable) as well as by being deleted — both are
+    retire, not retarget, unless the phrase resurfaces as static text elsewhere.
+- **Review of the delta:** grep-triage + read of all 21 changed+added files
+  resolved to **keep** across the board — no new bucket-2/3 nerf. Notables: the 3
+  gateway pages + `data-managed-agents-endpoint-reference` are `data-*` reference
+  blobs (keep); `report-code-review-findings` reports **all** verified findings with
+  no count cap (structured output, keep); `security-monitor…second-part` is a
+  BLOCK/ALLOW classifier (Part-1 rule #3 — never weaken, keep); the model-migration
+  guide, current-models, and LLM-apps skill are reference/sample-prompt content
+  (keep); the context-tip selector (1–2-sentence tip), `/review` 2–3-sentence
+  overview, artifact one-sentence title, and `fleet-agent-suggestion` 3-string JSON
+  are structured-output caps (keep).
+- **Exhaustive sibling audit (Part 6):** all 81 rules' stock present in their own
+  stock file; **0 un-ruled siblings**. Every cross-file stock match is already
+  ruled in both files (the remote-plan/remote-planning pair, general-task ↔
+  general-purpose, the two subagent-example files, bash-git-commit ↔ quick-pr) or is
+  the intentional `skill-model-migration-guide` keep (the "recommendation, not an
+  exhaustive survey" sentence, still inside a quoted sample prompt in v2.1.196).
+- **Binary check:** **skipped** this sync (installed binary v2.1.191 ≠ sync target
+  v2.1.196 ≠ latest v2.1.197). On the re-sync to 2.1.197 — or if the machine
+  upgrades to 2.1.197 first — run the Part-7 `unpack`+fingerprint against the real
+  binary to confirm JSON-derived stock == running binary before trusting an
+  `--apply`, and to catch any prompt that changed between 196 and 197.

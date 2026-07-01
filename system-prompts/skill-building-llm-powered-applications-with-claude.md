@@ -5,7 +5,7 @@ description: >-
   covering language detection, API surface selection (Claude API vs Managed
   Agents), model defaults, thinking/effort configuration, and language-specific
   documentation reading
-ccVersion: 2.1.186
+ccVersion: 2.1.196
 -->
 # Building LLM-Powered Applications with Claude
 
@@ -215,6 +215,21 @@ A note: if any of the model strings above look unfamiliar to you, that's to be e
 
 ---
 
+## Authentication (Quick Reference)
+
+**An unset `ANTHROPIC_API_KEY` does NOT mean there are no credentials.** The SDKs and the `ant` CLI resolve credentials in this order (first match wins): `ANTHROPIC_API_KEY` → `ANTHROPIC_AUTH_TOKEN` → the `ANTHROPIC_PROFILE`-selected or active OAuth profile from `ant auth login` → Workload Identity Federation env vars → the default profile on disk. A bare `Anthropic()` / `new Anthropic()` / `anthropic.NewClient()` works after `ant auth login` with no env var set.
+
+**When you need to call the API and `ANTHROPIC_API_KEY` is unset, don't ask the user for a key.** First run `ant auth status` — it shows which credential source and profile is active. If it reports an active profile:
+
+- **SDK code or `ant` CLI:** just run it. The zero-arg client constructor and every `ant …` subcommand pick up the profile automatically — no env var needed.
+- **Raw `curl` / HTTP:** get a short-lived token with `ant auth print-credentials --access-token` and send it as `Authorization: Bearer <token>` **plus** the header `anthropic-beta: oauth-2025-04-20` (OAuth tokens go on `Authorization: Bearer`, not `x-api-key:` — converting a curl from an API key is a header change, not a key swap). Always pass `--access-token`; the no-flag form prints JSON, not a bare token.
+
+Only ask the user for a key if `ant auth status` reports no active credential source (or `ant` itself isn't installed). Suggest `ant auth login` as the first option — it stores a profile under `~/.config/anthropic/` that the SDKs read automatically — and an exported `ANTHROPIC_API_KEY` as the alternative.
+
+Full auth details (named profiles, scopes, the API-key-shadows-profile trap, refresh-token expiry): `shared/anthropic-cli.md`.
+
+---
+
 ## Thinking & Effort (Quick Reference)
 
 **Fable 5 / Opus 4.8 / 4.7 — Adaptive thinking only:** Use `thinking: {type: \"adaptive\"}`. `thinking: {type: \"enabled\", budget_tokens: N}` returns a 400 — adaptive is the only on-mode. On Opus 4.8 and 4.7, `{type: \"disabled\"}` and omitting `thinking` both work; on Fable 5, an explicit `{type: \"disabled\"}` returns a 400 — omit the `thinking` param entirely instead. Sampling parameters (`temperature`, `top_p`, `top_k`) are also removed and will 400. Opus 4.8 keeps the same request surface as 4.7 (no new breaking changes) — see `shared/model-migration.md` → Migrating to Opus 4.8 for the behavioral re-tuning, and → Migrating to Opus 4.7 for the full breaking-change list when coming from 4.6 or earlier. Note: with `thinking` disabled, Opus 4.8 may write longer reasoning into the visible response — leave adaptive thinking on, or add a final-answer-only instruction (see the migration guide).
@@ -257,7 +272,7 @@ For placement patterns, architectural guidance, and the silent-invalidator audit
 
 ## Fast Mode (Quick Reference)
 
-**Research preview, Opus 4.8 / 4.7 only** (Opus 4.6 fast mode is deprecated and being removed; after removal, `speed: \"fast\"` on 4.6 silently falls back to standard speed instead of erroring — use 4.8 or 4.7). Fast mode runs the same model at up to 2.5x higher output tokens per second, at premium pricing. Three things are required on every request: use the **beta** messages endpoint (`client.beta.messages.…`), pass the beta flag `fast-mode-2026-02-01`, and set `speed: \"fast\"` as a top-level request parameter (not a header, not in `extra_body`).
+**Research preview, Opus 4.8 / 4.7 only.** Opus 4.7 fast mode is deprecated — after removal, `speed: \"fast\"` on 4.7 returns an error. Opus 4.8 is the durable fast-capable tier. Fast mode runs the same model at up to 2.5x higher output tokens per second, at premium pricing. Three things are required on every request: use the **beta** messages endpoint (`client.beta.messages.…`), pass the beta flag `fast-mode-2026-02-01`, and set `speed: \"fast\"` as a top-level request parameter (not a header, not in `extra_body`).
 
 ```python
 client.beta.messages.create(
@@ -522,6 +537,7 @@ Live documentation URLs are in `shared/live-sources.md`.
 
 ## Common Pitfalls
 
+- **No `ANTHROPIC_API_KEY` ≠ no credentials.** Don't bail or ask the user for a key just because the env var is unset — run `ant auth status` first. After `ant auth login`, a bare `Anthropic()` client and `ant …` work with no env var; for raw curl, use `Authorization: Bearer $(ant auth print-credentials --access-token)` plus header `anthropic-beta: oauth-2025-04-20`. See the Authentication quick reference above and `shared/anthropic-cli.md`.
 - Don't truncate inputs when passing files or content to the API. If the content is too long to fit in the context window, notify the user and discuss options (chunking, summarization, etc.) rather than silently truncating.
 - **Fable 5 / Opus 4.8 / 4.7 thinking:** Adaptive only. `thinking: {type: \"enabled\", budget_tokens: N}` returns 400 — `budget_tokens` is fully removed (along with `temperature`, `top_p`, `top_k`). Use `thinking: {type: \"adaptive\"}`. Opus 4.8 inherits this surface from 4.7 with no new breaking changes; Fable 5 adds one — an explicit `thinking: {type: \"disabled\"}` returns a 400 (accepted on 4.7/4.8); omit the param instead.
 - **Opus 4.6 / Sonnet 4.6 thinking:** Use `thinking: {type: \"adaptive\"}` — do NOT use `budget_tokens` for new 4.6 code (deprecated on both Opus 4.6 and Sonnet 4.6; for gradual migration of existing code, see the transitional escape hatch in `shared/model-migration.md` — note this carve-out does not apply to Fable 5, Opus 4.7 or 4.8). For older models, `budget_tokens` must be less than `max_tokens` (minimum 1024). This will throw an error if you get it wrong.
@@ -545,7 +561,7 @@ Live documentation URLs are in `shared/live-sources.md`.
 - **Fine-grained tool streaming is not a beta feature.** Set `eager_input_streaming: true` on the tool definition and call the regular `client.messages.stream(...)`. There is no beta header and no `client.beta.*` path.
 - **Cache diagnostics is beta.** Use `client.beta.messages.*` with beta `cache-diagnosis-2026-04-07`. Pass `diagnostics: {previous_message_id: null}` on the first turn and `diagnostics: {previous_message_id: <previous response id>}` on subsequent turns; the result is on `response.diagnostics`. Availability: `shared/platform-availability.md`.
 - **Memory tool type is `memory_20250818`.** Declare `{\"type\": \"memory_20250818\", \"name\": \"memory\"}`. Go uses the beta-namespace type `{OfMemoryTool20250818: &anthropic.BetaMemoryTool20250818Param{}}` on `client.Beta.Messages.New`; Python/TypeScript/Ruby/PHP/C# use the non-beta `client.messages.create`; Java has both a non-beta `MemoryTool20250818` and a beta tool-runner path. Python/TypeScript provide `BetaAbstractMemoryTool` / `betaMemoryTool` helpers for implementing the backend.
-- **Use a model the feature actually supports.** Some features are restricted to specific model tiers — fast mode is Opus 4.8 / 4.7 only (Opus 4.6 fast mode is deprecated — after removal it will fall back silently to standard speed), task budgets are Fable 5 / Opus 4.8 / 4.7 only, and the advisor tool requires a valid executor↔advisor pair. If the user's prompt names a model that the feature doesn't support, use a supported model instead and note the substitution in the output.
+- **Use a model the feature actually supports.** Some features are restricted to specific model tiers — fast mode is Opus 4.8 / 4.7 only, task budgets are Fable 5 / Opus 4.8 / 4.7 only, and the advisor tool requires a valid executor↔advisor pair. If the user's prompt names a model that the feature doesn't support, use a supported model instead and note the substitution in the output.
 - **Bedrock / Foundry: use the platform client class.** For Bedrock use the `…BedrockMantle…` client (e.g. Python `AnthropicBedrockMantle`, Java `BedrockMantleBackend`) with `anthropic.`-prefixed model IDs; `AnthropicBedrock`/`BedrockBackend` without `Mantle` is the legacy path. For Foundry use `AnthropicFoundry` / `FoundryBackend` / `AnthropicFoundryClient` where the SDK supports it (C#, Java, PHP, Python, TypeScript); Go and Ruby have no Foundry client — Ruby's documented fallback is the first-party client with a custom `base_url`. Per-language table above.
 - **Don't define custom types for SDK data structures:** The SDK exports types for all API objects. Use `Anthropic.MessageParam` for messages, `Anthropic.Tool` for tool definitions, `Anthropic.ToolUseBlock` / `Anthropic.ToolResultBlockParam` for tool results, `Anthropic.Message` for responses. Defining your own `interface ChatMessage { role: string; content: unknown }` duplicates what the SDK already provides and loses type safety.
 - **Report and document output:** For tasks that produce reports, documents, or visualizations, the code execution sandbox has `python-docx`, `python-pptx`, `matplotlib`, `pillow`, and `pypdf` pre-installed. Claude can generate formatted files (DOCX, PDF, charts) and return them via the Files API — consider this for \"report\" or \"document\" type requests instead of plain stdout text.

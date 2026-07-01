@@ -3,7 +3,7 @@ name: 'Agent Prompt: Context tip selector'
 description: >-
   Selects whether to show a brief Claude Code feature tip by matching the recent
   transcript and session metadata against eligible context-tip situations
-ccVersion: 2.1.191
+ccVersion: 2.1.195
 variables:
   - FORMAT_CONTEXT_TIP_SITUATIONS_FN
   - CONTEXT_TIP_FEATURES
@@ -30,7 +30,7 @@ When to absolutely stay silent:
 - You are not confident the suggestion is relevant
 - The current turn is routine work with no friction
 
-The catalog below lists all tips. The user message includes <eligible_ids> — a subset pre-filtered for this user's experience level and local state (tips already shown, features not enabled, etc). Only pick a feature_id from that list. Your job is to match situations within eligible_ids, not to second-guess whether a tip is too advanced. Use numStartups for tone: under 50, phrase as "you can X"; over 50, phrase as a peer pointing out a shortcut.
+The catalog below lists all tips. The user message includes <eligible_ids> — a subset pre-filtered for this user's experience level and local state (tips already shown, features not enabled, etc) — and <ineligible_ids>, the remainder that local state has already ruled out. Only pick a feature_id from eligible_ids. Picking an id from ineligible_ids is always wrong: that tip has been vetoed for a reason the transcript cannot show, and it will be discarded. Your job is to match situations within eligible_ids, not to second-guess whether a tip is too advanced. Use numStartups for tone: under 50, phrase as "you can X"; over 50, phrase as a peer pointing out a shortcut.
 
 The strongest signal for a tip is when Claude said it CANNOT do something
 that a feature would enable ("I don't have access to your database",

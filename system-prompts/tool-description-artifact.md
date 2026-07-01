@@ -4,7 +4,7 @@ description: >-
   Describes the Artifact tool for deploying self-contained HTML or Markdown
   pages, including file-first usage, update behavior, CSP constraints,
   responsive design, and favicon requirements
-ccVersion: 2.1.187
+ccVersion: 2.1.196
 variables:
   - ARTIFACT_DESIGN_SKILL_NAME
 -->
@@ -12,7 +12,7 @@ Render an HTML or Markdown file to an Artifact — a default-private web page ho
 
 **Before writing the page, you MUST load the \`${ARTIFACT_DESIGN_SKILL_NAME}\` skill** to calibrate how much design investment this particular request warrants. Then write the content to a file (via Write/Edit) and call Artifact with its path. The file is wrapped in a \`<!doctype html>…<head>…</head><body>\` skeleton at publish time, so write the page content directly — no \`<!DOCTYPE>\`, \`<html>\`, \`<head>\`, or \`<body>\` tags of your own. The file includes a minimal CSS reset. Unless the user names a location, put the file in your scratchpad directory if one is listed in your system prompt.
 
-**Title**: Set a concise \`<title>\` in the HTML — it names the artifact in the browser tab and gallery. Keep it stable across redeploys.
+**Title**: Set a concise \`<title>\` in the HTML — it names the artifact in the browser tab and gallery. Keep it stable across redeploys. Pass a one-sentence \`description\` parameter — it becomes the gallery card's subtitle.
 
 **To update**: Edit the file, then call Artifact again with the same file path — it redeploys to the same URL. A different file path claims a new URL so only use a different path if you intend to create a separate new Artifact.
 

@@ -850,18 +850,22 @@ RULES: dict[str, list[Rule]] = {
             description='troubleshooting confirm gate: explain the fix clearly + why (informs the safety decision)',
         ),
     ],
-    "system-prompt-coordinator-mode-orchestration.md": [
-        Rule(
-            # The coordinator's stated job is to synthesize results and communicate
-            # with the user; a one-line launch note undercuts that. Parallel to the
-            # communication-style flips ("short updates"->"substantive updates").
-            # The "Never fabricate results / results arrive separately" clause that
-            # follows this sentence is left untouched.
-            stock='briefly tell the user what you launched and end your response.',
-            unnerf='tell the user what you launched and why — what each worker is investigating and what you expect to learn back — then end your response.',
-            description='coordinator launch note: explain what/why per worker instead of a brief note',
-        ),
-    ],
+    # -------------------------------------------------------------------------
+    # system-prompt-coordinator-mode-orchestration.md: RETIRED in the v2.1.196
+    # sync. Anthropic replaced the literal launch-note phrase — "briefly tell the
+    # user what you launched and end your response." — with a runtime-interpolated
+    # ${WAIT_FOR_AGENT_RESULTS_INSTRUCTION} variable. Line 44 now reads: "After
+    # launching agents, ${WAIT_FOR_AGENT_RESULTS_INSTRUCTION} and end your
+    # response. Never fabricate or predict agent results..." The brevity directive
+    # now lives inside that variable's *value*, which is defined in the binary and
+    # is NOT present in any extracted .md (grep-verified: no prompt file carries a
+    # "tell the user what you launched" / wait-for-results instruction as content).
+    # The tweakcc .md-patch mechanism replaces static `pieces` text and treats
+    # ${VARS} as wildcards, so it cannot reach a variable's value — this un-nerf is
+    # no longer applicable via .md. The surviving static text carries no nerf:
+    # "and end your response" is a functional stop (KEEP) and "Never fabricate or
+    # predict agent results" is a correctness guard (KEEP). Nothing left to flip.
+    # -------------------------------------------------------------------------
     "system-prompt-autonomous-loop-persistence-guidance-CLAUDE_CODE_LOOP_PERSISTENT.md": [
         Rule(
             # Sibling of system-prompt-autonomous-loop-check.md (already un-nerfed):
@@ -873,18 +877,21 @@ RULES: dict[str, list[Rule]] = {
             description='loop persistence quiet-tick: substantive status report, preserve persistence (mirrors autonomous-loop-check)',
         ),
     ],
-    "system-reminder-async-agent-launched.md": [
-        Rule(
-            # Same sentence as the now-un-nerfed coordinator-mode-orchestration rule.
-            # The reminder's purpose is anti-duplication ("don't redo the agent's
-            # work"); a fuller "what + why" launch note doesn't harm that, and the
-            # "end your response" stop is preserved. Flipped for cross-prompt
-            # consistency (the exhaustive sibling-duplicate audit surfaced it).
-            stock='briefly tell the user what you launched and end your response.',
-            unnerf='tell the user what you launched and why you launched it, then end your response.',
-            description='async-agent-launched note: explain what/why launched, keep the anti-duplication stop (mirrors coordinator-mode-orchestration)',
-        ),
-    ],
+    # -------------------------------------------------------------------------
+    # system-reminder-async-agent-launched.md: RETIRED in the v2.1.196 sync.
+    # Anthropic rewrote this reminder in v2.1.193. The old sentence — "...avoid
+    # working with the same files or topics it is using. Work on non-overlapping
+    # tasks, or briefly tell the user what you launched and end your response." —
+    # lost its entire "Work on non-overlapping tasks, or ... end your response"
+    # clause; it now ends at "...topics it is using." The launch-note brevity
+    # phrase this rule targeted is GONE (removed, not relocated: zero tree-wide
+    # hits for "briefly tell the user" or a "what you launched" directive). The
+    # rewritten reminder is a pure anti-duplication + don't-read-the-JSONL-transcript
+    # warning with no brevity directive to flip. Retired. (Its former sibling
+    # system-prompt-coordinator-mode-orchestration was retired the same sync for a
+    # different structural reason — the ${WAIT_FOR_AGENT_RESULTS_INSTRUCTION}
+    # variable-ization above.)
+    # -------------------------------------------------------------------------
 }
 
 
