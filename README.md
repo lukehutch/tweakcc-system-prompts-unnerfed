@@ -1,6 +1,8 @@
 # tweakcc system prompts — un-nerfed edition
 
-Modified [Claude Code](https://docs.claude.com/en/docs/claude-code/overview) system prompts that strip the "be brief, be minimal" directives and replace them with instructions to be thorough. This is the live set I run daily — not cleaned up for public consumption, in-progress un-nerfs and all.
+**Claude Code's own system prompts, rewritten to make the model thorough instead of terse.** Claude Code ships with its prompts baked into the binary, and they lean hard on brevity — "be concise," "do the minimum," "report back in two sentences" — by roughly 5:1 over instructions to be thorough. Those directives don't just shorten chat replies; they push the model to write shallower code, investigate less, and under-report what it found. This repo extracts the prompts, flips the brevity directives that cap *engineering depth and investigation* into instructions to be thorough (while keeping the ones that merely stop it from wall-of-texting a trivial question), and patches them back into the binary with [tweakcc](https://github.com/Piebald-AI/tweakcc) — so Claude Code does the careful, senior-grade version of the work by default.
+
+This is the live set I run daily — not cleaned up for public consumption, in-progress un-nerfs and all.
 
 > [!NOTE]
 > **Built from Claude Code v2.1.196** — 81 un-nerf rules across 62 files, `--check` clean, reconstructed byte-identically to a tweakcc extraction. It's a **stopgap**: the latest release is v2.1.197, but tweakcc hasn't published its prompt data yet (the usual hours-to-days publish lag), so re-sync when it lands. Full sync record: [UNNERF-GUIDE.md](UNNERF-GUIDE.md) Part 9.
@@ -100,4 +102,4 @@ The pattern holds throughout: stock leads with the prohibition and caps work at 
 
 Prompt text in `system-prompts/*.md` is Anthropic's copyright, extracted by tweakcc and modified; redistributed as a modified subset on a fair-use / research basis. The docs and repo organization are **CC0 / public domain**.
 
-**Not Anthropic-endorsed.** These change Claude Code's behavior in ways that may not suit your workflow — test in a throwaway session first, and keep the tweakcc binary backup so you can roll back. Something misbehaving? Open an issue or PR.
+These change Claude Code's behavior in ways that may not suit your workflow — test in a throwaway session first, and keep the tweakcc binary backup so you can roll back. Something misbehaving? Open an issue or PR.
