@@ -5,7 +5,7 @@
 This is the live set I run daily — not cleaned up for public consumption, in-progress un-nerfs and all.
 
 > [!NOTE]
-> **Built from Claude Code v2.1.198** — 80 un-nerf rules across 62 files, `--check` clean, reconstructed byte-identically to a tweakcc extraction and verified against the installed v2.1.198 binary (all 540 prompts byte-present). v2.1.198 is the latest release and the newest tweakcc has prompt data for. Full sync record: [UNNERF-GUIDE.md](UNNERF-GUIDE.md) Part 9.
+> **Built from Claude Code v2.1.198** — 80 un-nerf rules across 62 files, `--check` clean, reconstructed byte-identically to a tweakcc extraction and verified against the installed v2.1.198 binary (541 prompts byte-present: 540 from tweakcc's JSON, plus 1 restored by hand after re-checking every "removed" prompt directly against the binary and finding tweakcc's catalog had silently dropped one that's still live). v2.1.198 is the latest release and the newest tweakcc has prompt data for. Full sync record: [UNNERF-GUIDE.md](UNNERF-GUIDE.md) Part 9.
 
 **Docs:** [Un-nerf guide](UNNERF-GUIDE.md) (objectives + upgrade playbook) · [Maintenance](MAINTENANCE.md) (script flags) · [Background](BACKGROUND.md) (how tweakcc works)
 
@@ -82,7 +82,7 @@ The pattern holds throughout: stock leads with the prohibition and caps work at 
 │   ├── sync-version.mjs          # rebuild stock prompts + auto-diff the checksum manifest
 │   ├── prompt-checksums.mjs      # MD5 manifest tool
 │   └── apply-unnerfs.py          # replay all un-nerfs after a CC version bump
-└── system-prompts/               # 540 markdown files (Claude Code v2.1.198)
+└── system-prompts/               # 541 markdown files (Claude Code v2.1.198)
 ```
 
 `system-prompts/` holds the un-nerfed prompts (`tool-description-*`, `system-prompt-*`, `system-reminder-*`, `data-*`, `agent-prompt-*`, `skill-*`, `tool-parameter-*`). The checksum manifest fingerprints **stock**, not the un-nerfed files — so on a version bump `sync-version.mjs` reports exactly what Anthropic changed, uncoloured by the un-nerfs. See [UNNERF-GUIDE.md](UNNERF-GUIDE.md).

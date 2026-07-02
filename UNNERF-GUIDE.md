@@ -423,7 +423,9 @@ published. Replace this snapshot each sync rather than appending history.
   tweakcc has prompt data for. (The prior sync stopped at v2.1.196 as a stopgap
   while v2.1.197's JSON lagged; v2.1.197 and v2.1.198 have since published, so this
   sync jumped straight to the latest.)
-- **Scale:** **80 un-nerf rules across 62 files**, 540 prompts, `--check` clean.
+- **Scale:** **80 un-nerf rules across 62 files**, 541 prompts, `--check` clean
+  (540 from the v2.1.198 JSON + 1 restored by hand — see the follow-up correction
+  at the end of this section).
 - **Last sync (v2.1.196 → v2.1.198):** manifest delta — **36 changed, 22 added, 8
   removed** (482 unchanged; 526 → 540 prompts). Of the 22 added, **21 kept** and 1
   received the retargeted design flip (below). Kept covers the 9 new `data-*` blobs
@@ -455,3 +457,25 @@ published. Replace this snapshot each sync rather than appending history.
   on a ≥20-char literal run, the other 11 are `${interpolation}`-dominated
   micro-prompts confirmed via their shorter literal segments. **Zero mismatches**:
   the JSON-derived stock is byte-identical to what's actually running.
+- **Follow-up correction — a tweakcc catalog gap, not a real removal.** A binary
+  check that only fingerprints the 540 *tracked* prompts has a blind spot: it
+  can't catch a prompt that tweakcc's JSON silently dropped, since there's no
+  tracked file left to check. Re-verifying all 8 files the manifest reported as
+  "removed" between v2.1.196 and v2.1.198 individually against the raw v2.1.198
+  binary (not just against the tracked tree) found that 7 are genuine removals
+  (confirmed absent from the binary under several distinctive phrases each), but
+  **`system-prompt-current-claude-models.md`** — "The most recent Claude models
+  are the Claude 5 family..." — is still live in the binary, byte-identical to
+  its last-synced text. `prompts-2.1.198.json` simply omits it; this is a tweakcc
+  cataloging miss, not an Anthropic removal. Restored the file (`ccVersion:
+  2.1.198`, hand-added to the manifest) rather than retiring anything — there was
+  no rule to retire since this prompt never had one. Since `sync-version.mjs`
+  wipes and rewrites purely from the JSON, this restoration **will not survive**
+  the next full sync unless tweakcc's catalog picks the prompt back up — check
+  for it specifically after every future sync targeting this file's content
+  (search for "The most recent Claude models are") before trusting a "removed"
+  verdict for it again. The general lesson: a manifest "removed" entry means
+  *tweakcc's catalog* lost the prompt, which is usually because Anthropic did
+  too — but isn't guaranteed. When a removal is surprising (a prompt that sounds
+  load-bearing, or an oddly-round drop in count), spot-check it against the raw
+  binary before retiring anything tied to it.
